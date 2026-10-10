@@ -283,7 +283,7 @@ Result delete_scopefile_db(int64_t id) {
 
 Result update_scopefile_db(char *name, int64_t scope_id, ScopeFile sf) {
 
-  Result update_sf = update_scopefile(name, scope_id, sf.name, sf.extension);
+  Result update_sf = update_scopefile(name, scope_id, sf.name, sf.extension, sf.scope_id);
   if (update_sf.type != SUCCESS) {
     return (Result) { .type = update_sf.type, .value = update_sf.value };
   }
@@ -314,6 +314,7 @@ Result update_scopefile_db(char *name, int64_t scope_id, ScopeFile sf) {
 
   if (sf.name != NULL) to_update++;
   if (sf.extension != NULL) to_update++;
+  if (sf.scope_id != 0) to_update++;
   
   int added_to = 0;
 
@@ -328,6 +329,14 @@ Result update_scopefile_db(char *name, int64_t scope_id, ScopeFile sf) {
   if (sf.extension != NULL) {
     added_to++;
     strcat(update_clause, " extension = ?");
+    if (added_to != to_update && to_update != 1) {
+      strcat(update_clause, ",");
+    }
+  }
+
+  if (sf.scope_id != 0) {
+    added_to++;
+    strcat(update_clause, " scope_id = ?");
     if (added_to != to_update && to_update != 1) {
       strcat(update_clause, ",");
     }
@@ -349,6 +358,10 @@ Result update_scopefile_db(char *name, int64_t scope_id, ScopeFile sf) {
   
   if (sf.extension != NULL) {
     sqlite3_bind_text(update_scopefile_stmt, bind_index++, sf.extension, -1, SQLITE_STATIC);
+  }
+
+  if (sf.scope_id != 0) {
+    sqlite3_bind_int64(update_scopefile_stmt, bind_index++, sf.scope_id);
   }
 
   sqlite3_bind_text(update_scopefile_stmt, bind_index++, name, -1, SQLITE_STATIC);

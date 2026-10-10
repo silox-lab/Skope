@@ -158,6 +158,11 @@ Result make_scope(Scope s) {
   
   Result scope_exist = get_scope(s.id);
   if (scope_exist.type == FILE_DIR_NOTFOUND) {
+
+    char *scope_name_slug = malloc(256 * sizeof(char));
+    slugify_default(s.name, scope_name_slug, sizeof(scope_name_slug));
+    s.name = scope_name_slug;
+    
     Result build_path = build_scope_path(s);
     if (build_path.type != SUCCESS) {
       return (Result) { .type = build_path.type, .value = build_path.value };
@@ -179,6 +184,11 @@ Result make_scope(Scope s) {
 Result delete_scope(Scope s) {
 
   Result scope_exist = get_scope(s.id);
+
+  char *scope_name_slug = malloc(256 * sizeof(char));
+  slugify_default(s.name, scope_name_slug, sizeof(scope_name_slug));
+  s.name = scope_name_slug;
+
   if (scope_exist.type == FILE_DIR_NOTFOUND) {
     return (Result){ .type = SIMPLE_ERR, .value = "Scope not found." };
   }
@@ -208,6 +218,13 @@ Result update_scope(int64_t scope_id, char *new_name, int64_t new_parent_id, int
     return (Result) { .type = SIMPLE_ERR, .value = "scope not found" };
   }
 
+  if (new_name != NULL) {
+    char *scope_name_slug = malloc(256 * sizeof(char));
+    slugify_default(s_arr[0]->name, scope_name_slug, sizeof(scope_name_slug));
+    free(s_arr[0]->name);
+    s_arr[0]->name = scope_name_slug;
+  }
+
   Result path = build_scope_path(*s_arr[0]);
   if (path.type != SUCCESS) {
     return (Result) { .type = path.type, .value = path.value };
@@ -218,12 +235,18 @@ Result update_scope(int64_t scope_id, char *new_name, int64_t new_parent_id, int
     return (Result) { .type = scope_exist.type, .value = scope_exist.value };
   }
 
+  char *scope_newname_slug = malloc(256 * sizeof(char));
+
+  if (new_name != NULL) {
+    slugify_default(new_name, scope_newname_slug, sizeof(scope_newname_slug));
+  }
+
   Scope new_s = { 
     .id = s_arr[0]->id,
     .parent_scope_id = new_parent_id == 0 ? s_arr[0]->parent_scope_id : new_parent_id,
     .created_on = s_arr[0]->created_on,
     .wiki_id = new_wiki_id == 0 ? s_arr[0]->wiki_id : new_wiki_id,
-    .name = new_name == NULL ? s_arr[0]->name : new_name
+    .name = new_name == NULL ? s_arr[0]->name : scope_newname_slug
   };
 
   Result new_path = build_scope_path(new_s);
@@ -247,6 +270,7 @@ Result update_scope(int64_t scope_id, char *new_name, int64_t new_parent_id, int
 
   free(path.value);
   free(new_path.value);
+  free(scope_newname_slug);
 
   return (Result) { .type = SUCCESS, .value = "" };
 }
