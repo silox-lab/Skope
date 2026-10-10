@@ -324,12 +324,30 @@ Result update_scope_db(int64_t id, Scope s) {
   int to_update = 0;
 
   if (s.name != NULL) to_update++;
-  
+  if (s.parent_scope_id != 0) to_update++;
+  if (s.wiki_id != 0) to_update++;
+
   int added_to = 0;
 
   if (s.name != NULL) {
     added_to++;
     strcat(update_clause, " name = ?");
+    if (added_to != to_update && to_update != 1) {
+      strcat(update_clause, ",");
+    }
+  }
+
+  if (s.parent_scope_id != 0) {
+    added_to++;
+    strcat(update_clause, " parent_scope_id = ?");
+    if (added_to != to_update && to_update != 1) {
+      strcat(update_clause, ",");
+    }
+  }
+
+  if (s.wiki_id != 0) {
+    added_to++;
+    strcat(update_clause, " wiki_id = ?");
     if (added_to != to_update && to_update != 1) {
       strcat(update_clause, ",");
     }
@@ -347,6 +365,14 @@ Result update_scope_db(int64_t id, Scope s) {
   
   if (s.name != NULL) {
     sqlite3_bind_text(update_scope_stmt, bind_index++, s.name, -1, SQLITE_STATIC);
+  }
+
+  if (s.parent_scope_id != 0) {
+    sqlite3_bind_int64(update_scope_stmt, bind_index++, s.parent_scope_id);
+  }
+
+  if (s.wiki_id != 0) {
+    sqlite3_bind_int64(update_scope_stmt, bind_index++, s.wiki_id);
   }
 
   sqlite3_bind_int64(update_scope_stmt, bind_index++, id);

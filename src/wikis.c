@@ -8,7 +8,9 @@
 #include <stdio.h>
 #include "../include/errors.h"
 #include "../include/globals.h"
+#include "../include/slugify.h"
 #include "../include/database/wiki_db.h"
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include "../include/utils.h"
@@ -43,8 +45,11 @@ Result get_wiki(char *name)
 
 Result make_wiki(char *name) {
 
+  char *wiki_name_slug = malloc(256 * sizeof(char));
+  slugify_default(name, wiki_name_slug, sizeof(wiki_name_slug));
+
   char wiki_fullpath[256];
-  snprintf(wiki_fullpath, sizeof(wiki_fullpath), "%s/%s", GET_STORAGE_PATH(), name);
+  snprintf(wiki_fullpath, sizeof(wiki_fullpath), "%s/%s", GET_STORAGE_PATH(), wiki_name_slug);
   
   Result wiki_exist = get_wiki(name);
   
@@ -64,8 +69,12 @@ Result make_wiki(char *name) {
 }
 
 Result delete_wiki(char *name) {
+
+  char *wiki_name_slug = malloc(256 * sizeof(char));
+  slugify_default(name, wiki_name_slug, sizeof(wiki_name_slug));
+
   char wiki_fullpath[256];
-  snprintf(wiki_fullpath, sizeof(wiki_fullpath), "%s/%s", GET_STORAGE_PATH(), name);
+  snprintf(wiki_fullpath, sizeof(wiki_fullpath), "%s/%s", GET_STORAGE_PATH(), wiki_name_slug);
 
   Result wiki_exist = get_wiki(name);
   if (wiki_exist.type != SUCCESS) {
@@ -81,26 +90,33 @@ Result delete_wiki(char *name) {
 }
 
 Result update_wiki(char *name, char *new_name) {  
+
+  char *wiki_name_slug = malloc(256 * sizeof(char));
+  slugify_default(name, wiki_name_slug, sizeof(wiki_name_slug));
+
+  char *wiki_newname_slug = malloc(256 * sizeof(char));
+  slugify_default(new_name, wiki_newname_slug, sizeof(wiki_newname_slug));
+
   char wiki_path[256];
-  snprintf(wiki_path, sizeof(wiki_path), "%s/%s", GET_STORAGE_PATH(), name);
+  snprintf(wiki_path, sizeof(wiki_path), "%s/%s", GET_STORAGE_PATH(), wiki_name_slug);
 
   Result wiki_exist_db = get_wiki_db(name, 0);
   if (wiki_exist_db.type != SUCCESS) {
     return (Result) { .type = wiki_exist_db.type, .value = wiki_exist_db.value };
   }
 
-  Result wiki_exist = get_wiki(name);
+  Result wiki_exist = get_wiki(wiki_name_slug);
   if (wiki_exist.type != SUCCESS) {
     return (Result){ .type = SIMPLE_ERR, .value = "Wiki not found." };
   }
 
-  Result validate_rename = get_wiki(new_name);
+  Result validate_rename = get_wiki(wiki_newname_slug);
   if (wiki_exist.type == SUCCESS) {
     return (Result){ .type = SIMPLE_ERR, .value = "there are already wikis with the name you want to chose." };
   }
 
   char new_wiki_path[256];
-  snprintf(new_wiki_path, sizeof(new_wiki_path), "%s/%s", GET_STORAGE_PATH(), new_name);
+  snprintf(new_wiki_path, sizeof(new_wiki_path), "%s/%s", GET_STORAGE_PATH(), wiki_newname_slug);
 
   int rename_w = rename(wiki_path, new_wiki_path);
   if (rename_w != 0) {
