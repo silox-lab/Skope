@@ -148,11 +148,6 @@ Result update_scopefile(char *name, int64_t scope_id, char *new_name, char *new_
     return (Result) { .type = SIMPLE_ERR, .value = "scopefile not found" };
   }
 
-  char *scopefile_name_slug = malloc(256 * sizeof(char));
-  slugify_default(new_name, scopefile_name_slug, sizeof(scopefile_name_slug));
-  free(sf_arr[0]->name);
-  sf_arr[0]->name = scopefile_name_slug;
-
   Result path = build_scopefile_path(*sf_arr[0]);
   if (path.type != SUCCESS) {
     return (Result) { .type = path.type, .value = path.value };
@@ -163,18 +158,12 @@ Result update_scopefile(char *name, int64_t scope_id, char *new_name, char *new_
     return (Result) { .type = SIMPLE_ERR, .value = "scopefile exists." };
   }
 
-  char *scopefile_newname_slug = malloc(256 * sizeof(char));
-
-  if (new_name != NULL) {
-    slugify_default(new_name, scopefile_newname_slug, sizeof(scopefile_newname_slug));
-  }
-
   ScopeFile new_sf = { 
     .id = sf_arr[0]->id,
     .scope_id = new_scope_id == 0 ? sf_arr[0]->scope_id : new_scope_id,
     .created_on = sf_arr[0]->created_on,
     .extension = new_extension == NULL ? sf_arr[0]->extension : new_extension,
-    .name = new_name == NULL ? sf_arr[0]->name : scopefile_newname_slug
+    .name = new_name == NULL ? sf_arr[0]->name : new_name
   };
 
   Result new_path = build_scopefile_path(new_sf);
