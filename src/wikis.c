@@ -46,12 +46,22 @@ Result get_wiki(char *name)
 Result make_wiki(char *name) {
 
   char *wiki_name_slug = malloc(256 * sizeof(char));
+
   slugify_default(name, wiki_name_slug, sizeof(wiki_name_slug));
 
+  size_t name_cap = strlen(wiki_name_slug) + 1;
+  char *wiki_name = calloc(name_cap, 1);
+
+  if (!wiki_name) {
+    return (Result){ .type = SIMPLE_ERR, .value = "oom" };
+  }
+
+  strcpy(wiki_name, wiki_name_slug);
+
   char wiki_fullpath[256];
-  snprintf(wiki_fullpath, sizeof(wiki_fullpath), "%s/%s", GET_STORAGE_PATH(), wiki_name_slug);
+  snprintf(wiki_fullpath, sizeof(wiki_fullpath), "%s/%s", GET_STORAGE_PATH(), wiki_name);
   
-  Result wiki_exist = get_wiki(name);
+  Result wiki_exist = get_wiki(wiki_fullpath);
   
   if (wiki_exist.type == FILE_DIR_NOTFOUND) {
     
@@ -71,12 +81,22 @@ Result make_wiki(char *name) {
 Result delete_wiki(char *name) {
 
   char *wiki_name_slug = malloc(256 * sizeof(char));
+
   slugify_default(name, wiki_name_slug, sizeof(wiki_name_slug));
 
-  char wiki_fullpath[256];
-  snprintf(wiki_fullpath, sizeof(wiki_fullpath), "%s/%s", GET_STORAGE_PATH(), wiki_name_slug);
+  size_t name_cap = strlen(wiki_name_slug) + 1;
+  char *wiki_name = calloc(name_cap, 1);
 
-  Result wiki_exist = get_wiki(name);
+  if (!wiki_name) {
+    return (Result){ .type = SIMPLE_ERR, .value = "oom" };
+  }
+
+  strcpy(wiki_name, wiki_name_slug);
+
+  char wiki_fullpath[256];
+  snprintf(wiki_fullpath, sizeof(wiki_fullpath), "%s/%s", GET_STORAGE_PATH(), wiki_name);
+
+  Result wiki_exist = get_wiki(wiki_fullpath);
   if (wiki_exist.type != SUCCESS) {
     return (Result){ .type = SIMPLE_ERR, .value = "Wiki not found." };
   }
@@ -92,33 +112,53 @@ Result delete_wiki(char *name) {
 Result update_wiki(char *name, char *new_name) {  
 
   char *wiki_name_slug = malloc(256 * sizeof(char));
+
   slugify_default(name, wiki_name_slug, sizeof(wiki_name_slug));
 
+  size_t name_cap = strlen(wiki_name_slug) + 1;
+  char *wiki_name = calloc(name_cap, 1);
+
+  if (!wiki_name) {
+    return (Result){ .type = SIMPLE_ERR, .value = "oom" };
+  }
+
+  strcpy(wiki_name, wiki_name_slug);
+
+  char wiki_fullpath[256];
+  snprintf(wiki_fullpath, sizeof(wiki_fullpath), "%s/%s", GET_STORAGE_PATH(), wiki_name);
+  
   char *wiki_newname_slug = malloc(256 * sizeof(char));
-  slugify_default(new_name, wiki_newname_slug, sizeof(wiki_newname_slug));
 
-  char wiki_path[256];
-  snprintf(wiki_path, sizeof(wiki_path), "%s/%s", GET_STORAGE_PATH(), wiki_name_slug);
+  slugify_default(name, wiki_newname_slug, sizeof(wiki_newname_slug));
 
+  size_t newname_cap = strlen(wiki_newname_slug) + 1;
+  char *wiki_newname = calloc(newname_cap, 1);
+
+  if (!wiki_newname) {
+    return (Result){ .type = SIMPLE_ERR, .value = "oom" };
+  }
+
+  strcpy(wiki_newname, wiki_newname_slug);
+
+  char wiki_newfullpath[256];
+  snprintf(wiki_newfullpath, sizeof(wiki_newfullpath), "%s/%s", GET_STORAGE_PATH(), wiki_newname);
+  
   Result wiki_exist_db = get_wiki_db(name, 0);
   if (wiki_exist_db.type != SUCCESS) {
     return (Result) { .type = wiki_exist_db.type, .value = wiki_exist_db.value };
   }
 
-  Result wiki_exist = get_wiki(wiki_name_slug);
+  Result wiki_exist = get_wiki(wiki_name);
   if (wiki_exist.type != SUCCESS) {
     return (Result){ .type = SIMPLE_ERR, .value = "Wiki not found." };
   }
 
-  Result validate_rename = get_wiki(wiki_newname_slug);
+  Result validate_rename = get_wiki(wiki_newname);
   if (wiki_exist.type == SUCCESS) {
     return (Result){ .type = SIMPLE_ERR, .value = "there are already wikis with the name you want to chose." };
   }
 
-  char new_wiki_path[256];
-  snprintf(new_wiki_path, sizeof(new_wiki_path), "%s/%s", GET_STORAGE_PATH(), wiki_newname_slug);
-
-  int rename_w = rename(wiki_path, new_wiki_path);
+  int rename_w = rename(wiki_fullpath, wiki_newfullpath);
   if (rename_w != 0) {
     return (Result) { .type = SIMPLE_ERR, .value = "error in renaming wiki." };
   }
