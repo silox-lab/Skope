@@ -315,98 +315,98 @@ Result get_all_wikis() {
   return (Result) { .type = SUCCESS, .value = wikis_list };
 }
 
-Result get_wiki_scopes_db(int64_t wiki_id) {
+// Result get_wiki_scopes_db(int64_t wiki_id) {
   
-  sqlite3 *db = GET_W_DATABASE();
-  char sql[256] = "SELECT * FROM Scope WHERE wiki_id = ?;";
-  sqlite3_stmt *get_wiki_scopes_stmt;
+//   sqlite3 *db = GET_W_DATABASE();
+//   char sql[256] = "SELECT * FROM Scope WHERE wiki_id = ?;";
+//   sqlite3_stmt *get_wiki_scopes_stmt;
 
-  int capacity = 10;
-  int length = 0;
-  Scope **scopes_list = malloc(sizeof(Scope *) * capacity);
-  if (scopes_list == NULL) {
-    int finalize_stat = sqlite3_finalize(get_wiki_scopes_stmt);
-    if (finalize_stat != SQLITE_OK) {
-      return (Result) {.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
-    }
-    return (Result) {.type = SIMPLE_ERR, .value = "memory allocation failed."};
-  }
+//   int capacity = 10;
+//   int length = 0;
+//   Scope **scopes_list = malloc(sizeof(Scope *) * capacity);
+//   if (scopes_list == NULL) {
+//     int finalize_stat = sqlite3_finalize(get_wiki_scopes_stmt);
+//     if (finalize_stat != SQLITE_OK) {
+//       return (Result) {.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
+//     }
+//     return (Result) {.type = SIMPLE_ERR, .value = "memory allocation failed."};
+//   }
 
-  int prepare_stat = sqlite3_prepare_v2(db, sql, -1, &get_wiki_scopes_stmt, NULL);
-  if (prepare_stat != SQLITE_OK) {
-    free(scopes_list);
-    return (Result) {.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
-  }
+//   int prepare_stat = sqlite3_prepare_v2(db, sql, -1, &get_wiki_scopes_stmt, NULL);
+//   if (prepare_stat != SQLITE_OK) {
+//     free(scopes_list);
+//     return (Result) {.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
+//   }
 
-  sqlite3_bind_int64(get_wiki_scopes_stmt, 1, wiki_id);
+//   sqlite3_bind_int64(get_wiki_scopes_stmt, 1, wiki_id);
 
-  while (sqlite3_step(get_wiki_scopes_stmt) == SQLITE_ROW) {
-    Scope *scope = malloc(sizeof(Scope));
-    if (scope == NULL) {
-      int finalize_stat = sqlite3_finalize(get_wiki_scopes_stmt);
-      if (finalize_stat != SQLITE_OK) {
-        for (int i=0; i < length; i++) {
-          free(scopes_list[i]->name);
-          free(scopes_list[i]);
-        }
-        free(scopes_list);
-        return (Result) {.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
-      }
-      for (int i=0; i < length; i++) {
-        free(scopes_list[i]->name);
-        free(scopes_list[i]);
-      }
-      free(scopes_list);
-      return (Result) {.type = SIMPLE_ERR, .value = "memory allocation failed."};
-    }
+//   while (sqlite3_step(get_wiki_scopes_stmt) == SQLITE_ROW) {
+//     Scope *scope = malloc(sizeof(Scope));
+//     if (scope == NULL) {
+//       int finalize_stat = sqlite3_finalize(get_wiki_scopes_stmt);
+//       if (finalize_stat != SQLITE_OK) {
+//         for (int i=0; i < length; i++) {
+//           free(scopes_list[i]->name);
+//           free(scopes_list[i]);
+//         }
+//         free(scopes_list);
+//         return (Result) {.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
+//       }
+//       for (int i=0; i < length; i++) {
+//         free(scopes_list[i]->name);
+//         free(scopes_list[i]);
+//       }
+//       free(scopes_list);
+//       return (Result) {.type = SIMPLE_ERR, .value = "memory allocation failed."};
+//     }
 
-    scope->id = sqlite3_column_int64(get_wiki_scopes_stmt, 0);
-    scope->name = strdup((char *)sqlite3_column_text(get_wiki_scopes_stmt, 1));
-    scope->created_on = sqlite3_column_int(get_wiki_scopes_stmt, 3);
-    scope->wiki_id = sqlite3_column_int64(get_wiki_scopes_stmt, 4);
-    scope->parent_scope_id = sqlite3_column_int64(get_wiki_scopes_stmt, 5);
+//     scope->id = sqlite3_column_int64(get_wiki_scopes_stmt, 0);
+//     scope->name = strdup((char *)sqlite3_column_text(get_wiki_scopes_stmt, 1));
+//     scope->created_on = sqlite3_column_int(get_wiki_scopes_stmt, 3);
+//     scope->wiki_id = sqlite3_column_int64(get_wiki_scopes_stmt, 4);
+//     scope->parent_scope_id = sqlite3_column_int64(get_wiki_scopes_stmt, 5);
     
-    if (capacity == length) {
-      capacity *= 2;
-      Scope **tmp = realloc(scopes_list, capacity);
-      if (tmp == NULL) {
-        free(scope->name);
-        free(scope);
-        for (int i=0; i < length; i++) {
-          free(scopes_list[i]->name);
-          free(scopes_list[i]);
-        }
+//     if (capacity == length) {
+//       capacity *= 2;
+//       Scope **tmp = realloc(scopes_list, capacity);
+//       if (tmp == NULL) {
+//         free(scope->name);
+//         free(scope);
+//         for (int i=0; i < length; i++) {
+//           free(scopes_list[i]->name);
+//           free(scopes_list[i]);
+//         }
         
-        free(scopes_list);
-        int finalize_stat = sqlite3_finalize(get_wiki_scopes_stmt);
-        if (finalize_stat != SQLITE_OK) {
-          return (Result) {.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
-        }
+//         free(scopes_list);
+//         int finalize_stat = sqlite3_finalize(get_wiki_scopes_stmt);
+//         if (finalize_stat != SQLITE_OK) {
+//           return (Result) {.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
+//         }
 
-        return (Result) { .type = SIMPLE_ERR, .value = "Memory reallocation failed."};
-      }
-      scopes_list = tmp;
-    }
+//         return (Result) { .type = SIMPLE_ERR, .value = "Memory reallocation failed."};
+//       }
+//       scopes_list = tmp;
+//     }
 
-    scopes_list[length] = scope;
-    length++;
-  }
+//     scopes_list[length] = scope;
+//     length++;
+//   }
 
-  scopes_list[length] = NULL;
+//   scopes_list[length] = NULL;
 
-  int finalize_stat = sqlite3_finalize(get_wiki_scopes_stmt);
-  if (finalize_stat != SQLITE_OK) {
-    for (int i=0; i < length; i++) {
-      free(scopes_list[i]->name);
-      free(scopes_list[i]);
-    }
-    free(scopes_list);
+//   int finalize_stat = sqlite3_finalize(get_wiki_scopes_stmt);
+//   if (finalize_stat != SQLITE_OK) {
+//     for (int i=0; i < length; i++) {
+//       free(scopes_list[i]->name);
+//       free(scopes_list[i]);
+//     }
+//     free(scopes_list);
 
-    return (Result) {.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
-  }
+//     return (Result) {.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
+//   }
 
-  return (Result) {.type = SUCCESS, .value = scopes_list};
-}
+//   return (Result) {.type = SUCCESS, .value = scopes_list};
+// }
 
 Result delete_wiki_db(int64_t id) {
 
