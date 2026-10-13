@@ -108,7 +108,7 @@ Result get_wiki_db(char *name, int64_t id) {
     free(wikis_arr);
 
     return (Result){
-        .type = SUCCESS,
+        .type = EMPTY,
         .value = NULL
   };
   }
@@ -157,7 +157,7 @@ Result create_wiki_db(Wiki *wiki) {
   const char *sql = "INSERT INTO Wiki(name, description, created_on) VALUES (?, ?, ?);";
 
   Result wiki_exist = get_wiki_db(wiki->name, 0);
-  if (wiki_exist.type != SUCCESS) {
+  if (wiki_exist.type != SUCCESS && wiki_exist.type != EMPTY) {
 
     return (Result){.type = wiki_exist.type,
                     .value = wiki_exist.value };
@@ -165,7 +165,7 @@ Result create_wiki_db(Wiki *wiki) {
 
   Wiki **wiki_exist_arr = wiki_exist.value;
 
-  if (wiki_exist_arr != NULL) {
+  if (wiki_exist.type != EMPTY) {
     return (Result) {
       .type = SIMPLE_ERR,
       .value = "wiki with same name exist"
@@ -416,7 +416,7 @@ Result delete_wiki_db(int64_t id) {
   Result wiki_exist = get_wiki_db(NULL, id);
   Wiki ** wiki_exist_arr = wiki_exist.value;
 
-  if (wiki_exist_arr == NULL) {
+  if (wiki_exist.type == EMPTY) {
     return (Result) { .type = SIMPLE_ERR, .value = "Wiki not found." };
   }
 
@@ -468,11 +468,11 @@ Result update_wiki_db(char *name, Wiki w) {
   char where_clause[256] = " WHERE name = ?;";
 
   Result wiki_exists = get_wiki_db(name, 0);
-  if (wiki_exists.type != SUCCESS) {
+  if (wiki_exists.type != SUCCESS && wiki_exists.type != EMPTY) {
     return (Result) { .type = wiki_exists.type, .value = wiki_exists.value };
   }
 
-  if (wiki_exists.type == SUCCESS && wiki_exists.value == NULL) {
+  if (wiki_exists.type == EMPTY) {
     return (Result) { .type = SIMPLE_ERR, .value = "Wiki not found." };
   }
 

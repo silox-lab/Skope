@@ -120,7 +120,7 @@ Result get_scope_db(int64_t id, int64_t wiki_id, int64_t parent_scope_id, char *
 
   if (arr_length == 0) {
     free(scopes_arr);
-    return (Result) { .type = SUCCESS, .value = NULL };
+    return (Result) { .type = EMPTY, .value = NULL };
   }
 
   if (step_result != SQLITE_DONE) {
@@ -160,7 +160,7 @@ Result create_scope_db(Scope *new_scope, Wiki *wiki) {
   sqlite3_stmt *create_stmt;
   const char *sql = "INSERT INTO Scope(name, created_on, parent_scope_id, wiki_id) VALUES (?, ?, ?, ?);";
   Result scope_exist = get_scope_db(0, new_scope->wiki_id, new_scope->parent_scope_id, new_scope->name);
-  if (scope_exist.type != SUCCESS) {
+  if (scope_exist.type != SUCCESS && scope_exist.type != EMPTY) {
     return (Result) {
         .type = scope_exist.type,
         .value = scope_exist.value
@@ -230,7 +230,7 @@ Result create_scope_db(Scope *new_scope, Wiki *wiki) {
   }
 
   Result get_created_scope = get_scope_db(0, new_scope->wiki_id, new_scope->parent_scope_id, new_scope->name);
-  if (get_created_scope.type != SUCCESS) {
+  if (get_created_scope.type != SUCCESS && get_created_scope.type != EMPTY) {
     return (Result) {
         .type = get_created_scope.type,
         .value = get_created_scope.value
@@ -308,11 +308,11 @@ Result update_scope_db(int64_t id, Scope s) {
   char where_clause[256] = " WHERE id = ?;";
 
   Result scope_exists = get_scope_db(id, 0, 0, 0);
-  if (scope_exists.type != SUCCESS) {
+  if (scope_exists.type != SUCCESS && scope_exists.type != EMPTY) {
     return (Result) { .type = scope_exists.type, .value = scope_exists.value };
   }
 
-  if (scope_exists.type == SUCCESS && scope_exists.value == NULL) {
+  if (scope_exists.type == EMPTY) {
     return (Result) { .type = SIMPLE_ERR, .value = "Scope not found." };
   }
 

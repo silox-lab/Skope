@@ -187,7 +187,7 @@ Result get_scopefile_db(char *scopefile_name, int64_t scope_id)
         free(scopefiles_arr);
 
         return (Result){
-            .type = SUCCESS,
+            .type = EMPTY,
             .value = NULL
         };
     }
@@ -296,11 +296,11 @@ Result update_scopefile_db(char *name, int64_t scope_id, ScopeFile sf) {
   char where_clause[256] = " WHERE scope_id = ? AND name = ?;";
 
   Result scopefile_exists = get_scopefile_db(name, scope_id);
-  if (scopefile_exists.type != SUCCESS) {
+  if (scopefile_exists.type != SUCCESS && scopefile_exists.type != EMPTY) {
     return (Result) { .type = scopefile_exists.type, .value = scopefile_exists.value };
   }
 
-  if (scopefile_exists.type == SUCCESS && scopefile_exists.value == NULL) {
+  if (scopefile_exists.type == EMPTY) {
     return (Result) { .type = SIMPLE_ERR, .value = "ScopeFile not found." };
   }
 

@@ -11,6 +11,7 @@ typedef enum ResultType {
   SUCCESS,
   FILE_DIR_NOTFOUND,
   DB_ERR,
+  EMPTY
 } ResultType;
 
 typedef struct Result {
