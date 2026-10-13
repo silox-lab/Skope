@@ -8,10 +8,10 @@
 #include "../include/database/wiki_db.h"
 #include "../include/database/scope_db.h"
 #include "../include/database/scopefile_db.h"
+#include "../include/database/entity.h"
 #include "../include/database/general.h"
 #include "../include/globals.h"
-#include "../include/json.h"
-
+#include "../include/errors.h"
 #include <ncurses.h>
 #include <sqlite3.h>
 #include <stdio.h>
@@ -54,6 +54,14 @@ void run_event_loop(void)
 
     if (r.type != SUCCESS) {
         printf("ScopeFile table creation failed: %s\n",
+               r.value ? (char *)r.value : "unknown error");
+        return;
+    }
+
+    r = create_table_db(DB_ENTITY);
+
+    if (r.type != SUCCESS) {
+        printf("GlobalEntity table creation failed: %s\n",
                r.value ? (char *)r.value : "unknown error");
         return;
     }
@@ -266,8 +274,55 @@ void run_event_loop(void)
     }
 
     ScopeFile *sf_from_db =
-        ((ScopeFile **)get_sf.value)[0];
+            ((ScopeFile **)get_sf.value)[0];
 
-    printf("%s\n", scopefile_arr_to_json(get_scopefile_db(NULL, 2)));
-    sqlite3_close(GET_W_DATABASE());
-}
+    GlobalEntity ge = {
+        .type = "Wiki",
+        .local_id = wiki->id
+    };
+
+    Result make_ge = create_globalentity_db(&ge);
+
+    if (make_ge.type != SUCCESS) {
+        printf("create_globalentity_db failed: %s\n",
+               make_ge.value
+                   ? (char *)make_ge.value
+                   : "unknown error");
+        return;
+    }
+
+    printf("GlobalEntity created successfully.\n");
+
+    Result get_ge = get_globalentity_db(
+        ge.type,
+        ge.local_id,
+        0
+    );
+
+    if (get_ge.type != SUCCESS) {
+        printf("get_globalentity_db failed: %s\n",
+               get_ge.value
+                   ? (char *)get_ge.value
+                   : "unknown error");
+        return;
+    }
+
+    if (get_ge.value == NULL) {
+        printf("ERROR: GlobalEntity was created but could not be found.\n");
+        return;
+    }
+
+    GlobalEntity **globalentity_arr = (GlobalEntity **)get_ge.value;
+
+    if (globalentity_arr[0] == NULL) {
+        printf("ERROR: GlobalEntity result contains no GlobalEntity.\n");
+        return;
+    }
+
+    GlobalEntity *globalentity = globalentity_arr[0];
+
+    printf("GlobalEntity retrieved successfully. ID: %lld\n",
+           (long long)globalentity->id);
+    
+        sqlite3_close(GET_W_DATABASE());
+    }

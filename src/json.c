@@ -122,3 +122,35 @@ char *scopefile_arr_to_json(Result scopefile_arr_result) {
 
     return cJSON_PrintUnformatted(root);
 }
+
+char *globalentity_arr_to_json(Result globalentity_arr_result) {
+
+    char *status = result_enum_to_str(globalentity_arr_result);
+
+    cJSON *root = cJSON_CreateObject();
+
+    cJSON_AddStringToObject(root, "status", status);
+    cJSON *value = cJSON_CreateObject();
+    cJSON *globalentity_arr = cJSON_AddArrayToObject(value, "wikis");
+
+    for (int i = 0; ((Wiki **)(globalentity_arr_result.value))[i] != NULL; i++) {
+
+        GlobalEntity *globalentity = ((GlobalEntity **)(globalentity_arr_result.value))[i];
+
+        cJSON *globalentity_obj = cJSON_CreateObject();
+        cJSON_AddNumberToObject(globalentity_obj, "id", globalentity->id);
+        cJSON_AddNumberToObject(globalentity_obj, "created_on", globalentity->created_on);
+        cJSON_AddStringToObject(globalentity_obj, "type", globalentity->type);
+
+        cJSON_AddItemToArray(globalentity_arr, globalentity_obj);
+
+        free(globalentity->type);
+        free(globalentity);
+    }
+
+    free(globalentity_arr_result.value);
+
+    cJSON_AddItemToObject(root, "value", value);
+
+    return cJSON_PrintUnformatted(root);
+}
