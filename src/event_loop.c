@@ -10,6 +10,7 @@
 #include "../include/database/scopefile_db.h"
 #include "../include/database/general.h"
 #include "../include/globals.h"
+#include "../include/json.h"
 
 #include <ncurses.h>
 #include <sqlite3.h>
@@ -267,5 +268,6 @@ void run_event_loop(void)
     ScopeFile *sf_from_db =
         ((ScopeFile **)get_sf.value)[0];
 
+    printf("%s\n", scopefile_arr_to_json(get_scopefile_db(NULL, 2)));
     sqlite3_close(GET_W_DATABASE());
 }

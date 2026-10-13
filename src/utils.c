@@ -13,6 +13,7 @@
 #include <pwd.h>
 #include <stdlib.h>
 #include <ftw.h>
+#include "../include/errors.h"
 
 char *get_user() {
     struct passwd *p = getpwuid(getuid());
@@ -32,4 +33,31 @@ int remove_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW
 
 int remove_directory_recursive(const char *path) {
     return nftw(path, remove_cb, 64, FTW_DEPTH | FTW_PHYS);
+}
+
+char *result_enum_to_str(Result r) {
+    
+    char *status;
+    switch (r.type) {
+
+        case SUCCESS:
+        status = "SUCCESS";
+        return status;
+        
+        case DB_ERR:
+        status = "DB_ERR";
+        return status;
+
+        case SIMPLE_ERR:
+        status = "SIMPLE_ERR";
+        return status;
+
+        case EMPTY:
+        status = "EMPTY";
+        return status;
+
+        case FILE_DIR_NOTFOUND:
+        status = "FILE_DIR_NOTFOUND";
+        return status;
+    }
 }
