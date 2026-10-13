@@ -31,6 +31,13 @@ typedef struct Wiki {
   time_t created_on;
 } Wiki;
 
+typedef struct GlobalEntity {
+  int64_t id;
+  int64_t local_id;
+  char *type;
+  time_t created_on;
+} GlobalEntity;
+
 #define DB_SCOPE_FILE                                                          \
   "CREATE TABLE IF NOT EXISTS ScopeFile ("                                     \
   "id integer NOT NULL PRIMARY KEY AUTOINCREMENT,"                                                        \
@@ -59,5 +66,13 @@ typedef struct Wiki {
   "description text NOT NULL,"                                                  \
   "created_on integer NOT NULL"                                                    \
   ");"
+
+#define DB_ENTITY \
+ "CREATE TABLE IF NOT EXISTS GlobalEntity (" \
+ "id integer NOT NULL PRIMARY KEY AUTOINCREMENT," \
+ "type varchar(250) NOT NULL," \
+ "local_id integer NOT NULL," \
+ "created_on integer NOT NULL" \
+ ");" \
 
 #endif
