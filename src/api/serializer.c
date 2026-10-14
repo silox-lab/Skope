@@ -1,6 +1,11 @@
-#include "../include/errors.h"
-#include "../include/utils.h"
-#include "../include/schema.h"
+/*
+ * SPDX-FileCopyrightText: 2026 silox-lab
+ *
+ * SPDX-License-Identifier: MIT
+*/
+#include "../../include/errors.h"
+#include "../../include/utils.h"
+#include "../../include/schema.h"
 #include <stdlib.h>
 #include <cjson/cJSON.h>
 
