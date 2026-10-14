@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2026 silox-lab
+ *
+ * SPDX-License-Identifier: MIT
+*/
 #ifndef RELATION
 #define RELATION
 #include "../errors.h"

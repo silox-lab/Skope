@@ -3,13 +3,12 @@
  *
  * SPDX-License-Identifier: MIT
  */
-
 #include "../include/schema.h"
 #include "../include/database/wiki_db.h"
 #include "../include/database/scope_db.h"
 #include "../include/database/scopefile_db.h"
-#include "../include/database/entity.h"
-#include "../include/database/relation.h"
+#include "../include/database/entity_db.h"
+#include "../include/database/relation_db.h"
 #include "../include/database/general.h"
 #include "../include/globals.h"
 #include "../include/errors.h"
