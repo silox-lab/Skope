@@ -1,6 +1,11 @@
-#ifndef JSON
-#define JSON
-#include "errors.h"
+/*
+ * SPDX-FileCopyrightText: 2026 silox-lab
+ *
+ * SPDX-License-Identifier: MIT
+*/
+#ifndef SERIALIZER
+#define SERIALIZER
+#include "../errors.h"
 
 char *nodata_result_to_json(Result r);
 char *wiki_arr_to_json(Result wiki_arr_result);
