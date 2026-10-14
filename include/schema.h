@@ -38,6 +38,14 @@ typedef struct GlobalEntity {
   time_t created_on;
 } GlobalEntity;
 
+typedef struct Relation {
+  int64_t id;
+  int64_t source_id;
+  int64_t target_id;
+  char *type;
+  time_t created_on;
+} Relation;
+
 #define DB_SCOPE_FILE                                                          \
   "CREATE TABLE IF NOT EXISTS ScopeFile ("                                     \
   "id integer NOT NULL PRIMARY KEY AUTOINCREMENT,"                                                        \
@@ -74,5 +82,16 @@ typedef struct GlobalEntity {
  "local_id integer NOT NULL," \
  "created_on integer NOT NULL" \
  ");" \
+
+#define DB_RELATION \
+"CREATE TABLE IF NOT EXISTS Relation (" \
+"id integer NOT NULL PRIMARY KEY AUTOINCREMENT," \
+"source_id integer NOT NULL," \
+"target_id integer NOT NULL," \
+"type varchar(250) NOT NULL," \
+"created_on integer NOT NULL," \
+"FOREIGN KEY(source_id) REFERENCES Relation(id) ON DELETE CASCADE," \
+"FOREIGN KEY(target_id) REFERENCES Relation(id) ON DELETE CASCADE" \
+");" \
 
 #endif
