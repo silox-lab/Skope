@@ -9,6 +9,7 @@
 #include "../include/database/scope_db.h"
 #include "../include/database/scopefile_db.h"
 #include "../include/database/entity.h"
+#include "../include/database/relation.h"
 #include "../include/database/general.h"
 #include "../include/globals.h"
 #include "../include/errors.h"
@@ -62,6 +63,14 @@ void run_event_loop(void)
 
     if (r.type != SUCCESS) {
         printf("GlobalEntity table creation failed: %s\n",
+               r.value ? (char *)r.value : "unknown error");
+        return;
+    }
+
+    r = create_table_db(DB_RELATION);
+
+    if (r.type != SUCCESS) {
+        printf("Relation table creation failed: %s\n",
                r.value ? (char *)r.value : "unknown error");
         return;
     }
@@ -325,4 +334,57 @@ void run_event_loop(void)
            (long long)globalentity->id);
     
         sqlite3_close(GET_W_DATABASE());
+
+    Relation rel = {
+        .source_id = globalentity->id,
+        .target_id = globalentity->id,
+        .type = "references"
+    };
+
+    Result make_rel = create_relation_db(&rel);
+
+    if (make_rel.type != SUCCESS) {
+        printf("create_relation_db failed: %s\n",
+               make_rel.value
+                   ? (char *)make_rel.value
+                   : "unknown error");
+        return;
+    }
+
+    printf("Relation created successfully.\n");
+
+    Result get_rel = get_relation_db(
+        rel.source_id,
+        rel.target_id,
+        rel.type,
+        0
+    );
+
+    if (get_rel.type != SUCCESS) {
+        printf("get_relation_db failed: %s\n",
+               get_rel.value
+                   ? (char *)get_rel.value
+                   : "unknown error");
+        return;
+    }
+
+    if (get_rel.value == NULL) {
+        printf("ERROR: Relation was created but could not be found.\n");
+        return;
+    }
+
+    Relation **relation_arr = (Relation **)get_rel.value;
+
+    if (relation_arr[0] == NULL) {
+        printf("ERROR: Relation result contains no Relation.\n");
+        return;
+    }
+
+    Relation *relation = relation_arr[0];
+
+    printf("Relation retrieved successfully. ID: %lld\n",
+           (long long)relation->id);
+
+    sqlite3_close(GET_W_DATABASE());
+
     }

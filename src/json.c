@@ -154,3 +154,38 @@ char *globalentity_arr_to_json(Result globalentity_arr_result) {
 
     return cJSON_PrintUnformatted(root);
 }
+
+char *relation_arr_to_json(Result relation_arr_result) {
+
+    char *status = result_enum_to_str(relation_arr_result);
+
+    cJSON *root = cJSON_CreateObject();
+
+    cJSON_AddStringToObject(root, "status", status);
+    cJSON *value = cJSON_CreateObject();
+    cJSON *relation_arr = cJSON_AddArrayToObject(value, "relations");
+
+    for (int i = 0; ((Relation **)(relation_arr_result.value))[i] != NULL; i++) {
+
+        Relation *relation = ((Relation **)(relation_arr_result.value))[i];
+
+        cJSON *relation_obj = cJSON_CreateObject();
+
+        cJSON_AddNumberToObject(relation_obj, "id", relation->id);
+        cJSON_AddNumberToObject(relation_obj, "created_on", relation->created_on);
+        cJSON_AddStringToObject(relation_obj, "type", relation->type);
+        cJSON_AddNumberToObject(relation_obj, "source_id", relation->source_id);
+        cJSON_AddNumberToObject(relation_obj, "target_id", relation->target_id);
+
+        cJSON_AddItemToArray(relation_arr, relation_obj);
+
+        free(relation->type);
+        free(relation);
+    }
+
+    free(relation_arr_result.value);
+
+    cJSON_AddItemToObject(root, "value", value);
+
+    return cJSON_PrintUnformatted(root);
+}
