@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: MIT
 */
-#ifndef HANDLER
-#define HANDLER
+#ifndef WIKI_HANDLER
+#define WIKI_HANDLER
 #include "../errors.h"
 #include <cjson/cJSON.h>
 
