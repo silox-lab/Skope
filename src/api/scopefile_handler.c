@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "../../include/database/scopefile_db.h"
+#include "../../include/api/serializer.h"
 
 Result handle_get_scopefile_db(cJSON *value) {
 
@@ -25,7 +26,7 @@ Result handle_get_scopefile_db(cJSON *value) {
     int64_t scopefile_scope_id =
         scope_id ? (int64_t)scope_id->valuedouble : 0;
 
-    return get_scopefile_db(scopefile_name, scopefile_scope_id);
+    return (Result) { .type = SUCCESS, .value = scopefile_arr_to_json(get_scopefile_db(scopefile_name, scopefile_scope_id)) };
 }
 
 Result handle_create_scopefile_db(cJSON *value) {
@@ -50,7 +51,7 @@ Result handle_create_scopefile_db(cJSON *value) {
         .scope_id = (int64_t)scope_id->valuedouble
     };
 
-    return create_scopefile_db(&scopefile);
+    return (Result) {.type = SUCCESS, .value = nodata_result_to_json(create_scopefile_db(&scopefile)) };
 }
 
 Result handle_delete_scopefile_db(cJSON *value) {
@@ -64,7 +65,7 @@ Result handle_delete_scopefile_db(cJSON *value) {
         };
     }
 
-    return delete_scopefile_db((int64_t)id->valuedouble);
+    return (Result) { .type = SUCCESS, .value = nodata_result_to_json(delete_scopefile_db((int64_t)id->valuedouble)) };
 }
 
 Result handle_update_scopefile_db(cJSON *value) {
@@ -105,9 +106,9 @@ Result handle_update_scopefile_db(cJSON *value) {
             : 0
     };
 
-    return update_scopefile_db(
+    return (Result) { .type = SUCCESS, .value = nodata_result_to_json(update_scopefile_db(
         current_name->valuestring,
         (int64_t)scope_id->valuedouble,
         scopefile
-    );
+											  )) };
 }

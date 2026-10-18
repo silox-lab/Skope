@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include "../../include/errors.h"
 #include "../../include/database/relation_db.h"
+#include "../../include/api/serializer.h"
 
 Result handle_get_relation_db(cJSON *value) {
     cJSON *source_id = cJSON_GetObjectItemCaseSensitive(value, "source_id");
@@ -26,12 +27,12 @@ Result handle_get_relation_db(cJSON *value) {
         };
     }
 
-    return get_relation_db(
+    return (Result) { .type = SUCCESS, .value = relation_arr_to_json(get_relation_db(
         source,
         target,
         type != NULL ? type->valuestring : NULL,
         relation_id
-    );
+    ))};
 }
 
 Result handle_create_relation_db(cJSON *value) {
@@ -48,7 +49,7 @@ Result handle_create_relation_db(cJSON *value) {
         .type = type->valuestring
     };
 
-    return create_relation_db(&relation);
+    return (Result) { .type = SUCCESS, .value = nodata_result_to_json(create_relation_db(&relation)) };
 }
 
 Result handle_delete_relation_db(cJSON *value) {
@@ -69,12 +70,14 @@ Result handle_delete_relation_db(cJSON *value) {
         };
     }
 
-    return delete_relation_db(
+    return (Result) {
+      .type = SUCCESS, .value =
+      nodata_result_to_json(delete_relation_db(
         source,
         target,
         type != NULL ? type->valuestring : NULL,
         relation_id
-    );
+    )) };
 }
 
 Result handle_update_relation_db(cJSON *value) {
@@ -100,11 +103,11 @@ Result handle_update_relation_db(cJSON *value) {
         .type = type != NULL ? type->valuestring : NULL
     };
 
-    return update_relation_db(
+    return (Result) { .type = SUCCESS, .value = nodata_result_to_json(update_relation_db(
         0,
         0,
         NULL,
         relation_id,
         relation
-    );
+											 )) };
 }

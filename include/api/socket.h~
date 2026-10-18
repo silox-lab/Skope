@@ -1,0 +1,7 @@
+#ifndef SOCKET
+#define SOCKET
+#include "../errors.h"
+
+Result setup_socket();
+
+#endif

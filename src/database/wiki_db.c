@@ -157,20 +157,15 @@ Result create_wiki_db(Wiki *wiki) {
   const char *sql = "INSERT INTO Wiki(name, description, created_on) VALUES (?, ?, ?);";
 
   Result wiki_exist = get_wiki_db(wiki->name, 0);
-  if (wiki_exist.type != SUCCESS && wiki_exist.type != EMPTY) {
-
-    return (Result){.type = wiki_exist.type,
-                    .value = wiki_exist.value };
-  }
-
-  Wiki **wiki_exist_arr = wiki_exist.value;
 
   if (wiki_exist.type != EMPTY) {
     return (Result) {
       .type = SIMPLE_ERR,
       .value = "wiki with same name exist"
     };
-  } 
+  }
+
+  Wiki **wiki_exist_arr = wiki_exist.value;
 
   int prepare_stat = sqlite3_prepare_v2(db, sql, -1, &create_stmt, NULL);
   if (prepare_stat != SQLITE_OK) {

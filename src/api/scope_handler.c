@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "../../include/database/scope_db.h"
+#include "../../include/api/serializer.h"
 
 Result handle_get_scope_db(cJSON *value) {
 
@@ -34,7 +35,9 @@ Result handle_get_scope_db(cJSON *value) {
         parent_scope_id ? (int64_t)parent_scope_id->valuedouble : 0;
     char *scope_name = name ? name->valuestring : NULL;
 
-    return get_scope_db(scope_id, scope_wiki_id, scope_parent_id, scope_name);
+    return (Result) {
+      .type = SUCCESS, .value = scope_arr_to_json(get_scope_db(scope_id,
+       scope_wiki_id, scope_parent_id, scope_name)) };
 }
 
 Result handle_create_scope_db(cJSON *value) {
@@ -62,7 +65,7 @@ Result handle_create_scope_db(cJSON *value) {
             : 0
     };
 
-    return create_scope_db(&scope, &wiki);
+    return (Result) { .type = SUCCESS, .value = nodata_result_to_json(create_scope_db(&scope, &wiki)) };
 }
 
 Result handle_delete_scope_db(cJSON *value) {
@@ -73,7 +76,7 @@ Result handle_delete_scope_db(cJSON *value) {
         return (Result) { .type = SIMPLE_ERR, .value = "failure in handling." };
     }
 
-    return delete_scope_db((int64_t)id->valuedouble);
+    return (Result) { .type = SUCCESS, .value = nodata_result_to_json(delete_scope_db((int64_t)id->valuedouble)) };
 }
 
 Result handle_update_scope_db(cJSON *value) {
@@ -103,5 +106,5 @@ Result handle_update_scope_db(cJSON *value) {
         .wiki_id = wiki_id ? (int64_t)wiki_id->valuedouble : 0
     };
 
-    return update_scope_db((int64_t)id->valuedouble, scope);
+    return (Result) { .type = SUCCESS, .value = nodata_result_to_json(update_scope_db((int64_t)id->valuedouble, scope)) };
 }
