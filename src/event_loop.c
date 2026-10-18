@@ -12,6 +12,7 @@
 #include "../include/database/general.h"
 #include "../include/globals.h"
 #include "../include/errors.h"
+#include "../include/api/socket.h"
 #include <ncurses.h>
 #include <sqlite3.h>
 #include <stdio.h>
@@ -83,10 +84,8 @@ void run_event_loop(void)
 
     if (make_w.type != SUCCESS) {
 
-        printf("create_wiki_db failed: %s\n",
-               make_w.value
-                   ? (char *)make_w.value
-                   : "unknown error");
+      printf("create_wiki_db failed: %s\n", (char *)make_w.value);
+         
 
         return;
     }
@@ -384,6 +383,10 @@ void run_event_loop(void)
     printf("Relation retrieved successfully. ID: %lld\n",
            (long long)relation->id);
 
+    Result socket_errors = setup_socket();
+    if (socket_errors.type != SUCCESS) {
+      printf("socket error: %s\n", socket_errors.value);
+    }
     sqlite3_close(GET_W_DATABASE());
 
     }

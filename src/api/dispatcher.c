@@ -9,6 +9,7 @@
 #include "../../include/api/scopefile_handler.h"
 #include "../../include/api/relation_handler.h"
 #include <cjson/cJSON.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
 
@@ -25,24 +26,35 @@ Result dispatch_wiki_request(const char *json) {
     cJSON *value =
         cJSON_GetObjectItemCaseSensitive(root, "value");
 
-    if (!cJSON_IsString(method) || !cJSON_IsObject(value)) {
-        return (Result) { .type = SIMPLE_ERR, .value = "failure in handling." };
-    }
-
     if (strcmp(method->valuestring, "get_wiki_db") == 0) {
         return handle_get_wiki_db(value);
-    }
-    else if (strcmp(method->valuestring, "create_wiki_db") == 0) {
-        return handle_create_wiki_db(value);
-    }
-    else if (strcmp(method->valuestring, "get_all_wikis") == 0) {
+    } else if (strcmp(method->valuestring, "create_wiki_db") == 0) {
+      
+      if (!cJSON_IsString(method) || !cJSON_IsObject(value)) {
+        cJSON_Delete(root);
+        return (Result) { .type = SIMPLE_ERR, .value = "failure in handling." };
+      }
+      return handle_create_wiki_db(value);
+
+    } else if (strcmp(method->valuestring, "get_all_wikis") == 0) {
         return handle_get_all_wikis(value);
-    }
-    else if (strcmp(method->valuestring, "delete_wiki_db") == 0) {
-        return handle_delete_wiki_db(value);
-    }
-    else if (strcmp(method->valuestring, "update_wiki_db") == 0) {
-        return handle_update_wiki_db(value);
+    } else if (strcmp(method->valuestring, "delete_wiki_db") == 0) {
+
+      if (!cJSON_IsString(method) || !cJSON_IsObject(value)) {
+        cJSON_Delete(root);
+        return (Result) { .type = SIMPLE_ERR, .value = "failure in handling." };
+      }
+
+      return handle_delete_wiki_db(value);
+
+    } else if (strcmp(method->valuestring, "update_wiki_db") == 0) {
+
+      if (!cJSON_IsString(method) || !cJSON_IsObject(value)) {
+        cJSON_Delete(root);
+        return (Result) { .type = SIMPLE_ERR, .value = "failure in handling." };
+      }
+
+      return handle_update_wiki_db(value);
     }
 
     return (Result) { .type = EMPTY, .value = NULL };
@@ -180,4 +192,29 @@ Result dispatch_relation_request(const char *json) {
 
     cJSON_Delete(root);
     return result;
+}
+
+Result route_request(const char *json) {
+
+    Result route_wiki = dispatch_wiki_request(json);
+    if (route_wiki.type != EMPTY) {
+      return route_wiki;
+    }
+
+    Result route_scope = dispatch_scope_request(json);
+    if (route_scope.type != EMPTY) {
+      return route_scope;
+    }
+    
+    Result route_scopefile = dispatch_scopefile_request(json);
+    if (route_scopefile.type != EMPTY) {
+      return route_scopefile;
+    }
+    
+    Result route_relation = dispatch_relation_request(json);
+    if (route_relation.type != EMPTY) {
+      return route_relation;
+    }
+
+    return (Result) { .type = EMPTY, .value = NULL };
 }

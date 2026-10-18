@@ -5,6 +5,7 @@
 */
 
 #include <dirent.h>
+#include <errno.h>
 #include <stdio.h>
 #include "../include/errors.h"
 #include "../include/globals.h"
@@ -64,12 +65,12 @@ Result make_wiki(char *name) {
   Result wiki_exist = get_wiki(wiki_fullpath);
   
   if (wiki_exist.type == FILE_DIR_NOTFOUND) {
-    
+
     int mkdir_e = mkdir(wiki_fullpath, S_IRWXU);
     if (mkdir_e == -1) {
         return (Result) {
         .type = SIMPLE_ERR,
-        .value = "Error when creating Wiki."
+        .value = strerror(errno)
         };
     }
     return (Result){.type = SUCCESS, .value = "" };
