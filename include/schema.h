@@ -80,7 +80,8 @@ typedef struct Relation {
  "id integer NOT NULL PRIMARY KEY AUTOINCREMENT," \
  "type varchar(250) NOT NULL," \
  "local_id integer NOT NULL," \
- "created_on integer NOT NULL" \
+ "created_on integer NOT NULL," \
+ "UNIQUE(type, local_id)" \
  ");" \
 
 #define DB_RELATION \

@@ -7,6 +7,7 @@
 #include "../../include/api/wiki_handler.h"
 #include "../../include/api/scope_handler.h"
 #include "../../include/api/scopefile_handler.h"
+#include "../../include/api/entity_handler.h"
 #include "../../include/api/relation_handler.h"
 #include <cjson/cJSON.h>
 #include <stdio.h>
@@ -27,7 +28,13 @@ Result dispatch_wiki_request(const char *json) {
         cJSON_GetObjectItemCaseSensitive(root, "value");
 
     if (strcmp(method->valuestring, "get_wiki_db") == 0) {
+
+        if (!cJSON_IsString(method) || !cJSON_IsObject(value)) {
+            cJSON_Delete(root);
+            return (Result) { .type = SIMPLE_ERR, .value = "failure in handling." };
+        }
         return handle_get_wiki_db(value);
+
     } else if (strcmp(method->valuestring, "create_wiki_db") == 0) {
       
       if (!cJSON_IsString(method) || !cJSON_IsObject(value)) {
@@ -37,7 +44,9 @@ Result dispatch_wiki_request(const char *json) {
       return handle_create_wiki_db(value);
 
     } else if (strcmp(method->valuestring, "get_all_wikis") == 0) {
+
         return handle_get_all_wikis(value);
+
     } else if (strcmp(method->valuestring, "delete_wiki_db") == 0) {
 
       if (!cJSON_IsString(method) || !cJSON_IsObject(value)) {
@@ -150,6 +159,37 @@ Result dispatch_scopefile_request(const char *json) {
     return result;
 }
 
+Result dispatch_entity_request(const char *json) {
+
+    cJSON *root = cJSON_Parse(json);
+
+    if (root == NULL) {
+        return (Result) {
+            .type = SIMPLE_ERR,
+            .value = "failure in deserialization"
+        };
+    }
+
+    cJSON *method = cJSON_GetObjectItemCaseSensitive(root, "method");
+    cJSON *value = cJSON_GetObjectItemCaseSensitive(root, "value");
+
+    if (!cJSON_IsString(method) || !cJSON_IsObject(value)) {
+        cJSON_Delete(root);
+        return (Result) {
+            .type = SIMPLE_ERR,
+            .value = "failure in handling"
+        };
+    }
+
+    Result result;
+
+    if (strcmp(method->valuestring, "get_globalentity_db") == 0) {
+        result = handle_get_globalentity_db(value);
+    }
+
+    cJSON_Delete(root);
+    return result;
+}
 
 Result dispatch_relation_request(const char *json) {
 
@@ -211,6 +251,11 @@ Result route_request(const char *json) {
       return route_scopefile;
     }
     
+    Result route_entity = dispatch_entity_request(json);
+    if (route_entity.type != EMPTY) {
+      return route_entity;
+    }
+
     Result route_relation = dispatch_relation_request(json);
     if (route_relation.type != EMPTY) {
       return route_relation;

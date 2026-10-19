@@ -9,6 +9,6 @@
 #include "../../include/errors.h"
 
 Result open_database();
-Result create_table_db(char *table);
+Result run_sql_db(char *table);
 
 #endif

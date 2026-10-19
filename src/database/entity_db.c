@@ -153,6 +153,7 @@ Result get_globalentity_db(char *type, int64_t local_id, int64_t id) {
   return (Result){.type = SUCCESS, .value = globalentity_arr};
 }
 
+//[UNUSABLE] kept for future possible usecases
 Result create_globalentity_db(GlobalEntity *globalentity) {
   sqlite3 *db = GET_W_DATABASE();
   sqlite3_stmt *create_stmt;
@@ -249,6 +250,7 @@ Result create_globalentity_db(GlobalEntity *globalentity) {
   return (Result){.type = SUCCESS, .value = ""};
 }
 
+//[UNUSABLE] kept for future possible usecases
 Result delete_globalentity_db(char *type, int64_t local_id, int64_t id) {
   sqlite3 *db = GET_W_DATABASE();
   sqlite3_stmt *delete_globalentity_stmt;
@@ -319,6 +321,7 @@ Result delete_globalentity_db(char *type, int64_t local_id, int64_t id) {
   return (Result){.type = SUCCESS, .value = ""};
 }
 
+//[UNUSABLE] kept for future possible usecases
 Result update_globalentity_db(char *type, int64_t local_id, int64_t id, GlobalEntity globalentity) {
 
   sqlite3 *db = GET_W_DATABASE();

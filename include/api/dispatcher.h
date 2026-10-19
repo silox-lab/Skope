@@ -10,6 +10,7 @@
 Result dispatch_wiki_request(const char *json);
 Result dispatch_scope_request(const char *json);
 Result dispatch_scopefile_request(const char *json);
+Result dispatch_entity_request(const char *json);
 Result dispatch_relation_request(const char *json);
 Result route_request(const char *json);
 
