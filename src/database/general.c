@@ -29,15 +29,15 @@ Result open_database() {
   return (Result){.type = SUCCESS, .value = db};
 }
 
-Result create_table_db(char *table) {
+Result run_sql_db(char *table) {
 
   sqlite3 *db = GET_W_DATABASE();
 
-  char *create_err;
-  int create_stat = sqlite3_exec(db, table, NULL, NULL, &create_err);
-  if (create_stat != SQLITE_OK) {
-    char *err_msg = strdup(create_err);
-    sqlite3_free(create_err);
+  char *run_err;
+  int run_stat = sqlite3_exec(db, table, NULL, NULL, &run_err);
+  if (run_stat != SQLITE_OK) {
+    char *err_msg = strdup(run_err);
+    sqlite3_free(run_err);
     return (Result){.type = DB_ERR, .value = err_msg};
   } else {
     return (Result){.type = SUCCESS, .value = ""};

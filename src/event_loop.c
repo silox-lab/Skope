@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 #include "../include/schema.h"
+#include "../include/triggers.h"
 #include "../include/database/wiki_db.h"
 #include "../include/database/scope_db.h"
 #include "../include/database/scopefile_db.h"
@@ -35,7 +36,7 @@ void run_event_loop(void)
 
     Result r;
 
-    r = create_table_db(DB_WIKI);
+    r = run_sql_db(DB_WIKI);
 
     if (r.type != SUCCESS) {
         printf("Wiki table creation failed: %s\n",
@@ -43,7 +44,7 @@ void run_event_loop(void)
         return;
     }
 
-    r = create_table_db(DB_SCOPE);
+    r = run_sql_db(DB_SCOPE);
 
     if (r.type != SUCCESS) {
         printf("Scope table creation failed: %s\n",
@@ -51,7 +52,7 @@ void run_event_loop(void)
         return;
     }
 
-    r = create_table_db(DB_SCOPE_FILE);
+    r = run_sql_db(DB_SCOPE_FILE);
 
     if (r.type != SUCCESS) {
         printf("ScopeFile table creation failed: %s\n",
@@ -59,7 +60,7 @@ void run_event_loop(void)
         return;
     }
 
-    r = create_table_db(DB_ENTITY);
+    r = run_sql_db(DB_ENTITY);
 
     if (r.type != SUCCESS) {
         printf("GlobalEntity table creation failed: %s\n",
@@ -67,13 +68,31 @@ void run_event_loop(void)
         return;
     }
 
-    r = create_table_db(DB_RELATION);
+    r = run_sql_db(DB_RELATION);
 
     if (r.type != SUCCESS) {
         printf("Relation table creation failed: %s\n",
                r.value ? (char *)r.value : "unknown error");
         return;
     }
+
+    Result trg1_w = run_sql_db(DB_WIKI_TRG1);
+    if (trg1_w.type != SUCCESS) printf("trg1_w: %s\n", trg1_w.value);
+
+    Result trg2_w = run_sql_db(DB_WIKI_TRG2);
+    if (trg2_w.type != SUCCESS) printf("trg2_s: %s\n", trg2_w.value);
+
+    Result trg1_s = run_sql_db(DB_SCOPE_TRG1);
+    if (trg1_s.type != SUCCESS) printf("trg1_s: %s\n", trg1_s.value);
+
+    Result trg2_s = run_sql_db(DB_SCOPE_TRG2);
+    if (trg2_s.type != SUCCESS) printf("trg2_s: %s\n", trg2_s.value);
+
+    Result trg1_sf = run_sql_db(DB_SCOPE_FILE_TRG1);
+    if (trg1_sf.type != SUCCESS) printf("trg1_sf: %s\n", trg1_sf.value);
+
+    Result trg2_sf = run_sql_db(DB_SCOPE_FILE_TRG2);
+    if (trg2_sf.type != SUCCESS) printf("trg2_sf: %s\n", trg2_sf.value);
 
     Wiki w = {
         .description = "generator guide",
@@ -287,18 +306,6 @@ void run_event_loop(void)
         .type = "Wiki",
         .local_id = wiki->id
     };
-
-    Result make_ge = create_globalentity_db(&ge);
-
-    if (make_ge.type != SUCCESS) {
-        printf("create_globalentity_db failed: %s\n",
-               make_ge.value
-                   ? (char *)make_ge.value
-                   : "unknown error");
-        return;
-    }
-
-    printf("GlobalEntity created successfully.\n");
 
     Result get_ge = get_globalentity_db(
         ge.type,
