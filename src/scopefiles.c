@@ -19,7 +19,7 @@
 
 Result build_scopefile_path(ScopeFile sf) {
 
-  Result scope_exist = get_scope_db(sf.scope_id, 0, 0, NULL);
+  Result scope_exist = get_scope_db(sf.scope_id, 0, NULL);
   if (scope_exist.type != SUCCESS) {
     return (Result){.type = scope_exist.type, .value = scope_exist.value};
   }
@@ -97,7 +97,7 @@ Result make_scopefile(ScopeFile sf) {
 
   char path[1024];
 
-  Result get_scope = get_scope_db(sf.scope_id, 0, 0, NULL);
+  Result get_scope = get_scope_db(sf.scope_id, 0, NULL);
   if (get_scope.type != SUCCESS) {
     return (Result){.type = get_scope.type, .value = get_scope.value};
   }

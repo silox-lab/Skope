@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 silox-lab
  *
  * SPDX-License-Identifier: MIT
-*/
+ */
 #ifndef GLOBALS
 #define GLOBALS
 #include "schema.h"
@@ -15,5 +15,6 @@ void INIT_DATABASE();
 sqlite3 *GET_W_DATABASE();
 
 char *GET_STORAGE_PATH();
+void INIT_STORAGE_PATH();
 
 #endif

@@ -3,397 +3,269 @@
  *
  * SPDX-License-Identifier: MIT
  */
-#include "../include/schema.h"
-#include "../include/triggers.h"
-#include "../include/database/wiki_db.h"
+#include "../include/api/socket.h"
+#include "../include/database/entity_db.h"
+#include "../include/database/general.h"
+#include "../include/database/relation_db.h"
 #include "../include/database/scope_db.h"
 #include "../include/database/scopefile_db.h"
-#include "../include/database/entity_db.h"
-#include "../include/database/relation_db.h"
-#include "../include/database/general.h"
-#include "../include/globals.h"
 #include "../include/errors.h"
-#include "../include/api/socket.h"
+#include "../include/globals.h"
+#include "../include/schema.h"
+#include "../include/triggers.h"
 #include <ncurses.h>
 #include <sqlite3.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-void run_event_loop(void)
-{
+void run_event_loop(void) {
 
-    INIT_DATABASE();
+  INIT_DATABASE();
+  INIT_STORAGE_PATH();
 
-    sqlite3 *db = GET_W_DATABASE();
+  sqlite3 *db = GET_W_DATABASE();
 
-    if (db == NULL) {
-        printf("ERROR: database is NULL\n");
-        return;
-    }
+  if (db == NULL) {
+    printf("ERROR: database is NULL\n");
+    return;
+  }
 
-    printf("DB filename: %s\n",
-           sqlite3_db_filename(db, "main"));
+  printf("DB filename: %s\n", sqlite3_db_filename(db, "main"));
 
-    Result r;
+  Result r;
 
-    r = run_sql_db(DB_WIKI);
+  r = run_sql_db(DB_SCOPE);
 
-    if (r.type != SUCCESS) {
-        printf("Wiki table creation failed: %s\n",
-               r.value ? (char *)r.value : "unknown error");
-        return;
-    }
+  if (r.type != SUCCESS) {
+    printf("Scope table creation failed: %s\n", (char *)r.value);
+    return;
+  }
 
-    r = run_sql_db(DB_SCOPE);
+  r = run_sql_db(DB_SCOPE_FILE);
 
-    if (r.type != SUCCESS) {
-        printf("Scope table creation failed: %s\n",
-               r.value ? (char *)r.value : "unknown error");
-        return;
-    }
+  if (r.type != SUCCESS) {
+    printf("ScopeFile table creation failed: %s\n", (char *)r.value);
+    return;
+  }
 
-    r = run_sql_db(DB_SCOPE_FILE);
+  r = run_sql_db(DB_ENTITY);
 
-    if (r.type != SUCCESS) {
-        printf("ScopeFile table creation failed: %s\n",
-               r.value ? (char *)r.value : "unknown error");
-        return;
-    }
+  if (r.type != SUCCESS) {
+    printf("GlobalEntity table creation failed: %s\n", (char *)r.value);
+    return;
+  }
 
-    r = run_sql_db(DB_ENTITY);
+  r = run_sql_db(DB_RELATION);
 
-    if (r.type != SUCCESS) {
-        printf("GlobalEntity table creation failed: %s\n",
-               r.value ? (char *)r.value : "unknown error");
-        return;
-    }
+  if (r.type != SUCCESS) {
+    printf("Relation table creation failed: %s\n", (char *)r.value);
+    return;
+  }
 
-    r = run_sql_db(DB_RELATION);
+  Result trg1_s = run_sql_db(DB_SCOPE_TRG1);
+  if (trg1_s.type != SUCCESS)
+    printf("trg1_s: %s\n", (char *)trg1_s.value);
 
-    if (r.type != SUCCESS) {
-        printf("Relation table creation failed: %s\n",
-               r.value ? (char *)r.value : "unknown error");
-        return;
-    }
+  Result trg2_s = run_sql_db(DB_SCOPE_TRG2);
+  if (trg2_s.type != SUCCESS)
+    printf("trg2_s: %s\n", (char *)trg2_s.value);
 
-    Result trg1_w = run_sql_db(DB_WIKI_TRG1);
-    if (trg1_w.type != SUCCESS) printf("trg1_w: %s\n", trg1_w.value);
+  Result trg1_sf = run_sql_db(DB_SCOPE_FILE_TRG1);
+  if (trg1_sf.type != SUCCESS)
+    printf("trg1_sf: %s\n", (char *)trg1_sf.value);
 
-    Result trg2_w = run_sql_db(DB_WIKI_TRG2);
-    if (trg2_w.type != SUCCESS) printf("trg2_s: %s\n", trg2_w.value);
+  Result trg2_sf = run_sql_db(DB_SCOPE_FILE_TRG2);
+  if (trg2_sf.type != SUCCESS)
+    printf("trg2_sf: %s\n", (char *)trg2_sf.value);
 
-    Result trg1_s = run_sql_db(DB_SCOPE_TRG1);
-    if (trg1_s.type != SUCCESS) printf("trg1_s: %s\n", trg1_s.value);
+  Scope s = {
+      .name = "lithium ion",
+      .parent_scope_id = 0,
+  };
 
-    Result trg2_s = run_sql_db(DB_SCOPE_TRG2);
-    if (trg2_s.type != SUCCESS) printf("trg2_s: %s\n", trg2_s.value);
+  Result make_s = create_scope_db(&s);
 
-    Result trg1_sf = run_sql_db(DB_SCOPE_FILE_TRG1);
-    if (trg1_sf.type != SUCCESS) printf("trg1_sf: %s\n", trg1_sf.value);
+  if (make_s.type != SUCCESS) {
 
-    Result trg2_sf = run_sql_db(DB_SCOPE_FILE_TRG2);
-    if (trg2_sf.type != SUCCESS) printf("trg2_sf: %s\n", trg2_sf.value);
+    printf("create_scope_db failed: %s\n", (char *)make_s.value);
 
-    Wiki w = {
-        .description = "generator guide",
-        .name        = "energy"
-    };
+    return;
+  }
 
-    Result make_w = create_wiki_db(&w);
+  printf("Top-level scope created successfully.\n");
 
-    if (make_w.type != SUCCESS) {
+  Result get_s = get_scope_db(0, 0, s.name);
 
-      printf("create_wiki_db failed: %s\n", (char *)make_w.value);
-         
+  if (get_s.type != SUCCESS) {
 
-        return;
-    }
+    printf("get_scope_db failed: %s\n", (char *)get_s.value);
 
-    printf("Wiki created successfully.\n");
+    return;
+  }
 
+  if (get_s.value == NULL) {
 
-    Result get_w = get_wiki_db(w.name, 0);
+    printf("ERROR: Scope was created but could not be found.\n");
 
-    if (get_w.type != SUCCESS) {
+    return;
+  }
 
-        printf("get_wiki_db failed: %s\n",
-               get_w.value
-                   ? (char *)get_w.value
-                   : "unknown error");
+  Scope **scope_arr = (Scope **)get_s.value;
 
-        return;
-    }
+  if (scope_arr[0] == NULL) {
 
-    if (get_w.value == NULL) {
+    printf("ERROR: Scope result contains no Scope.\n");
 
-        printf("ERROR: Wiki was created but could not be found.\n");
+    return;
+  }
 
-        return;
-    }
+  Scope *scope1 = scope_arr[0];
 
-    Wiki **wiki_arr = (Wiki **)get_w.value;
+  Scope s2 = {
+      .name = "ion3",
+      .parent_scope_id = scope1->id,
+  };
 
-    if (wiki_arr[0] == NULL) {
+  Result make_s2 = create_scope_db(&s2);
 
-        printf("ERROR: Wiki result contains no Wiki.\n");
+  if (make_s2.type != SUCCESS) {
 
-        return;
-    }
+    printf("create_scope_db (child) failed: %s\n", (char *)make_s2.value);
 
-    Wiki *wiki = wiki_arr[0];
+    return;
+  }
 
-    Scope s = {
-        .name            = "lithium ion",
-        .parent_scope_id = 0,
-        .wiki_id         = wiki->id
-    };
+  printf("Child scope created successfully.\n");
 
-    Result make_s = create_scope_db(&s, wiki);
+  Result get_s2 = get_scope_db(0, scope1->id, s2.name);
 
-    if (make_s.type != SUCCESS) {
+  if (get_s2.type != SUCCESS) {
 
-        printf("create_scope_db failed: %s\n",
-               make_s.value
-                   ? (char *)make_s.value
-                   : "unknown error");
+    printf("get_scope_db (child) failed: %s\n", (char *)get_s2.value);
 
-        return;
-    }
+    return;
+  }
 
-    printf("Top-level scope created successfully.\n");
+  if (get_s2.value == NULL) {
 
-    Result get_s =
-        get_scope_db(
-            0,
-            wiki->id,
-            0,
-            s.name
-        );
+    printf("ERROR: Child scope was created but not found.\n");
 
-    if (get_s.type != SUCCESS) {
+    return;
+  }
 
-        printf("get_scope_db failed: %s\n",
-               get_s.value
-                   ? (char *)get_s.value
-                   : "unknown error");
+  Scope **scope2_arr = (Scope **)get_s2.value;
 
-        return;
-    }
+  if (scope2_arr[0] == NULL) {
 
-    if (get_s.value == NULL) {
+    printf("ERROR: Child scope result contains no Scope.\n");
 
-        printf("ERROR: Scope was created but could not be found.\n");
+    return;
+  }
 
-        return;
-    }
+  Scope *scope2 = scope2_arr[0];
 
-    Scope **scope_arr = (Scope **)get_s.value;
+  ScopeFile sf = {
+      .name = "hello_world", .scope_id = scope2->id, .extension = "txt"};
 
-    if (scope_arr[0] == NULL) {
+  Result make_sf = create_scopefile_db(&sf);
 
-        printf("ERROR: Scope result contains no Scope.\n");
+  if (make_sf.type != SUCCESS) {
 
-        return;
-    }
+    printf("create_scopefile_db failed: %s\n", (char *)make_sf.value);
 
-    Scope *scope1 = scope_arr[0];
+    return;
+  }
 
-    Scope s2 = {
-        .name            = "ion3",
-        .parent_scope_id = scope1->id,
-        .wiki_id         = wiki->id
-    };
+  printf("ScopeFile created successfully.\n");
 
-    Result make_s2 = create_scope_db(&s2, wiki);
+  Result get_sf = get_scopefile_db(sf.name, sf.scope_id);
 
-    if (make_s2.type != SUCCESS) {
+  if (get_sf.type != SUCCESS) {
 
-        printf("create_scope_db (child) failed: %s\n",
-               make_s2.value
-                   ? (char *)make_s2.value
-                   : "unknown error");
+    printf("get_scopefile_db failed: %s\n", (char *)get_sf.value);
 
-        return;
-    }
+    return;
+  }
 
-    printf("Child scope created successfully.\n");
+  if (get_sf.value == NULL) {
 
-    Result get_s2 =
-        get_scope_db(
-            0,
-            wiki->id,
-            scope1->id,
-            s2.name
-        );
+    printf("ERROR: ScopeFile was created but could not be found.\n");
 
-    if (get_s2.type != SUCCESS) {
+    return;
+  }
 
-        printf("get_scope_db (child) failed: %s\n",
-               get_s2.value
-                   ? (char *)get_s2.value
-                   : "unknown error");
+  ScopeFile *sf_from_db = ((ScopeFile **)get_sf.value)[0];
 
-        return;
-    }
+  GlobalEntity ge = {
+      .type = "Scope",
+  };
 
-    if (get_s2.value == NULL) {
+  Result get_ge = get_globalentity_db(ge.type, ge.local_id, 0);
 
-        printf("ERROR: Child scope was created but not found.\n");
+  if (get_ge.type != SUCCESS) {
+    printf("get_globalentity_db failed: %s\n", (char *)get_ge.value);
+    return;
+  }
 
-        return;
-    }
+  if (get_ge.value == NULL) {
+    printf("ERROR: GlobalEntity was created but could not be found.\n");
+    return;
+  }
 
-    Scope **scope2_arr = (Scope **)get_s2.value;
+  GlobalEntity **globalentity_arr = (GlobalEntity **)get_ge.value;
 
-    if (scope2_arr[0] == NULL) {
+  if (globalentity_arr[0] == NULL) {
+    printf("ERROR: GlobalEntity result contains no GlobalEntity.\n");
+    return;
+  }
 
-        printf("ERROR: Child scope result contains no Scope.\n");
+  GlobalEntity *globalentity = globalentity_arr[0];
 
-        return;
-    }
+  printf("GlobalEntity retrieved successfully. ID: %lld\n",
+         (long long)globalentity->id);
 
-    Scope *scope2 = scope2_arr[0];
-    
-    ScopeFile sf = {
-        .name       = "hello_world",
-        .scope_id   = scope2->id,
-        .extension  = "txt"
-    };
+  sqlite3_close(GET_W_DATABASE());
 
-    Result make_sf = create_scopefile_db(&sf);
+  Relation rel = {.source_id = globalentity->id,
+                  .target_id = globalentity->id,
+                  .type = "references"};
 
-    if (make_sf.type != SUCCESS) {
+  Result make_rel = create_relation_db(&rel);
 
-        printf("create_scopefile_db failed: %s\n",
-               make_sf.value
-                   ? (char *)make_sf.value
-                   : "unknown error");
+  if (make_rel.type != SUCCESS) {
+    printf("create_relation_db failed: %s\n", (char *)make_rel.value);
+    return;
+  }
 
-        return;
-    }
+  printf("Relation created successfully.\n");
 
-    printf("ScopeFile created successfully.\n");
+  Result get_rel = get_relation_db(rel.source_id, rel.target_id, rel.type, 0);
 
-    Result get_sf =
-        get_scopefile_db(
-            sf.name,
-            sf.scope_id
-        );
+  if (get_rel.type != SUCCESS) {
+    printf("get_relation_db failed: %s\n", (char *)get_rel.value);
+    return;
+  }
 
-    if (get_sf.type != SUCCESS) {
+  if (get_rel.value == NULL) {
+    printf("ERROR: Relation was created but could not be found.\n");
+    return;
+  }
 
-        printf("get_scopefile_db failed: %s\n",
-               get_sf.value
-                   ? (char *)get_sf.value
-                   : "unknown error");
+  Relation **relation_arr = (Relation **)get_rel.value;
 
-        return;
-    }
+  if (relation_arr[0] == NULL) {
+    printf("ERROR: Relation result contains no Relation.\n");
+    return;
+  }
 
-    if (get_sf.value == NULL) {
+  Relation *relation = relation_arr[0];
 
-        printf(
-            "ERROR: ScopeFile was created but could not be found.\n"
-        );
+  printf("Relation retrieved successfully. ID: %lld\n",
+         (long long)relation->id);
 
-        return;
-    }
-
-    ScopeFile *sf_from_db =
-            ((ScopeFile **)get_sf.value)[0];
-
-    GlobalEntity ge = {
-        .type = "Wiki",
-        .local_id = wiki->id
-    };
-
-    Result get_ge = get_globalentity_db(
-        ge.type,
-        ge.local_id,
-        0
-    );
-
-    if (get_ge.type != SUCCESS) {
-        printf("get_globalentity_db failed: %s\n",
-               get_ge.value
-                   ? (char *)get_ge.value
-                   : "unknown error");
-        return;
-    }
-
-    if (get_ge.value == NULL) {
-        printf("ERROR: GlobalEntity was created but could not be found.\n");
-        return;
-    }
-
-    GlobalEntity **globalentity_arr = (GlobalEntity **)get_ge.value;
-
-    if (globalentity_arr[0] == NULL) {
-        printf("ERROR: GlobalEntity result contains no GlobalEntity.\n");
-        return;
-    }
-
-    GlobalEntity *globalentity = globalentity_arr[0];
-
-    printf("GlobalEntity retrieved successfully. ID: %lld\n",
-           (long long)globalentity->id);
-    
-        sqlite3_close(GET_W_DATABASE());
-
-    Relation rel = {
-        .source_id = globalentity->id,
-        .target_id = globalentity->id,
-        .type = "references"
-    };
-
-    Result make_rel = create_relation_db(&rel);
-
-    if (make_rel.type != SUCCESS) {
-        printf("create_relation_db failed: %s\n",
-               make_rel.value
-                   ? (char *)make_rel.value
-                   : "unknown error");
-        return;
-    }
-
-    printf("Relation created successfully.\n");
-
-    Result get_rel = get_relation_db(
-        rel.source_id,
-        rel.target_id,
-        rel.type,
-        0
-    );
-
-    if (get_rel.type != SUCCESS) {
-        printf("get_relation_db failed: %s\n",
-               get_rel.value
-                   ? (char *)get_rel.value
-                   : "unknown error");
-        return;
-    }
-
-    if (get_rel.value == NULL) {
-        printf("ERROR: Relation was created but could not be found.\n");
-        return;
-    }
-
-    Relation **relation_arr = (Relation **)get_rel.value;
-
-    if (relation_arr[0] == NULL) {
-        printf("ERROR: Relation result contains no Relation.\n");
-        return;
-    }
-
-    Relation *relation = relation_arr[0];
-
-    printf("Relation retrieved successfully. ID: %lld\n",
-           (long long)relation->id);
-
-    Result socket_errors = setup_socket();
-    if (socket_errors.type != SUCCESS) {
-      printf("socket error: %s\n", socket_errors.value);
-    }
-    sqlite3_close(GET_W_DATABASE());
-
-    }
+  Result socket_errors = setup_socket();
+  if (socket_errors.type != SUCCESS) {
+    printf("socket error: %s\n", (char *)socket_errors.value);
+  }
+  sqlite3_close(GET_W_DATABASE());
+}

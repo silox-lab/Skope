@@ -28,40 +28,6 @@ char *nodata_result_to_json(Result r) {
   return cJSON_PrintUnformatted(root);
 }
 
-char *wiki_arr_to_json(Result wiki_arr_result) {
-
-  char *status = result_enum_to_str(wiki_arr_result);
-
-  cJSON *root = cJSON_CreateObject();
-
-  cJSON_AddStringToObject(root, "status", status);
-  cJSON *value = cJSON_CreateObject();
-  cJSON *wikis_arr = cJSON_AddArrayToObject(value, "wikis");
-
-  for (int i = 0; ((Wiki **)(wiki_arr_result.value))[i] != NULL; i++) {
-
-    Wiki *wiki = ((Wiki **)(wiki_arr_result.value))[i];
-
-    cJSON *wiki_obj = cJSON_CreateObject();
-    cJSON_AddNumberToObject(wiki_obj, "id", wiki->id);
-    cJSON_AddNumberToObject(wiki_obj, "created_on", wiki->created_on);
-    cJSON_AddStringToObject(wiki_obj, "name", wiki->name);
-    cJSON_AddStringToObject(wiki_obj, "description", wiki->description);
-
-    cJSON_AddItemToArray(wikis_arr, wiki_obj);
-
-    free(wiki->name);
-    free(wiki->description);
-    free(wiki);
-  }
-
-  free(wiki_arr_result.value);
-
-  cJSON_AddItemToObject(root, "value", value);
-
-  return cJSON_PrintUnformatted(root);
-}
-
 char *scope_arr_to_json(Result scope_arr_result) {
 
   char *status = result_enum_to_str(scope_arr_result);
@@ -70,7 +36,7 @@ char *scope_arr_to_json(Result scope_arr_result) {
 
   cJSON_AddStringToObject(root, "status", status);
   cJSON *value = cJSON_CreateObject();
-  cJSON *wikis_arr = cJSON_AddArrayToObject(value, "scopes");
+  cJSON *scopes_arr = cJSON_AddArrayToObject(value, "scopes");
 
   for (int i = 0; ((Scope **)(scope_arr_result.value))[i] != NULL; i++) {
 
@@ -80,11 +46,10 @@ char *scope_arr_to_json(Result scope_arr_result) {
     cJSON_AddNumberToObject(scope_obj, "id", scope->id);
     cJSON_AddNumberToObject(scope_obj, "created_on", scope->created_on);
     cJSON_AddStringToObject(scope_obj, "name", scope->name);
-    cJSON_AddNumberToObject(scope_obj, "wiki_id", scope->wiki_id);
     cJSON_AddNumberToObject(scope_obj, "parent_scope_id",
                             scope->parent_scope_id);
 
-    cJSON_AddItemToArray(wikis_arr, scope_obj);
+    cJSON_AddItemToArray(scopes_arr, scope_obj);
 
     free(scope->name);
     free(scope);
