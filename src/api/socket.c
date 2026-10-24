@@ -21,10 +21,10 @@ Result setup_socket() {
   char runtime_dir[256];
 
   if (get_dir == NULL) {
-    strcpy(runtime_dir, "/tmp/wikit.sock");
+    strcpy(runtime_dir, "/tmp/skope.sock");
   } else {
     strcpy(runtime_dir, get_dir);
-    strcat(runtime_dir, "/wikit.sock");
+    strcat(runtime_dir, "/skope.sock");
   }
 
   unlink(runtime_dir);
