@@ -19,12 +19,14 @@ Result handle_get_scope_db(cJSON *value) {
   if ((id != NULL && !cJSON_IsNumber(id)) ||
       (parent_scope_id != NULL && !cJSON_IsNumber(parent_scope_id)) ||
       (name != NULL && !cJSON_IsString(name))) {
-    return (Result){.type = SIMPLE_ERR, .value = "failure in handling."};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "get_scope: failure in handling."};
   }
 
   if (id == NULL && parent_scope_id == NULL && name == NULL) {
     return (Result){.type = SIMPLE_ERR,
-                    .value = "at least one parameter must be provided"};
+                    .value =
+                        "get_scope: at least one parameter must be provided"};
   }
 
   int64_t scope_id = id ? (int64_t)id->valuedouble : 0;
@@ -45,7 +47,8 @@ Result handle_create_scope_db(cJSON *value) {
 
   if (!cJSON_IsString(name) ||
       (parent_scope_id != NULL && !cJSON_IsNumber(parent_scope_id))) {
-    return (Result){.type = SIMPLE_ERR, .value = "failure in handling."};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "create_scope: failure in handling."};
   }
 
   Scope scope = {.name = name->valuestring,
@@ -62,7 +65,8 @@ Result handle_delete_scope_db(cJSON *value) {
   cJSON *id = cJSON_GetObjectItemCaseSensitive(value, "id");
 
   if (!cJSON_IsNumber(id)) {
-    return (Result){.type = SIMPLE_ERR, .value = "failure in handling."};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "delete_scope: failure in handling."};
   }
 
   return (Result){.type = SUCCESS,
@@ -79,12 +83,14 @@ Result handle_update_scope_db(cJSON *value) {
 
   if (!cJSON_IsNumber(id) || (name != NULL && !cJSON_IsString(name)) ||
       (parent_scope_id != NULL && !cJSON_IsNumber(parent_scope_id))) {
-    return (Result){.type = SIMPLE_ERR, .value = "failure in handling."};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "update_scope: failure in handling."};
   }
 
   if (name == NULL && parent_scope_id == NULL) {
-    return (Result){.type = SIMPLE_ERR,
-                    .value = "at least one field to update must be provided"};
+    return (Result){
+        .type = SIMPLE_ERR,
+        .value = "update_scope: at least one field to update must be provided"};
   }
 
   Scope scope = {

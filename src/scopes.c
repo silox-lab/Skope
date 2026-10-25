@@ -32,7 +32,7 @@ Result build_scope_path(Scope s) {
   int dirs_cap = 8;
   char **dirs = malloc(sizeof(char *) * dirs_cap);
   if (!dirs) {
-    return (Result){.type = SIMPLE_ERR, .value = "oom"};
+    return (Result){.type = SIMPLE_ERR, .value = "build_scope_path: oom"};
   }
 
   Scope iter_scope = s;
@@ -43,7 +43,7 @@ Result build_scope_path(Scope s) {
       for (int j = 0; j < dirs_length; j++)
         free(dirs[j]);
 
-      return (Result){.type = SIMPLE_ERR, .value = "oom"};
+      return (Result){.type = SIMPLE_ERR, .value = "build_scope_path: oom"};
     }
     slugify_default(iter_scope.name, slug_name, 256);
 
@@ -55,7 +55,7 @@ Result build_scope_path(Scope s) {
         for (int j = 0; j < dirs_length; j++)
           free(dirs[j]);
         free(dirs);
-        return (Result){.type = SIMPLE_ERR, .value = "oom"};
+        return (Result){.type = SIMPLE_ERR, .value = "build_scope_path: oom"};
       }
       dirs = tmp;
     }
@@ -83,7 +83,7 @@ Result build_scope_path(Scope s) {
     for (int j = 0; j < dirs_length; j++)
       free(dirs[j]);
     free(dirs);
-    return (Result){.type = SIMPLE_ERR, .value = "oom"};
+    return (Result){.type = SIMPLE_ERR, .value = "build_scope_path: oom"};
   }
 
   size_t pos = 0;
@@ -137,11 +137,12 @@ Result make_scope(Scope s) {
     int mkdir_e = mkdir(build_path.value, S_IRWXU);
     if (mkdir_e == -1) {
       return (Result){.type = SIMPLE_ERR,
-                      .value = "Error when creating Scope."};
+                      .value = "make_scope: Error when creating Scope."};
     }
     return (Result){.type = SUCCESS, .value = ""};
   } else {
-    return (Result){.type = SIMPLE_ERR, .value = "Scope already exist."};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "make_scope: Scope already exist."};
   }
 }
 

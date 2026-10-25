@@ -6,10 +6,10 @@
 #include "../../include/errors.h"
 #include "../../include/globals.h"
 #include "../../include/schema.h"
-#include <stdint.h>
-#include <string.h>
 #include <sqlite3.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 Result get_relation_db(int64_t source_id, int64_t target_id, char *type,
@@ -18,8 +18,10 @@ Result get_relation_db(int64_t source_id, int64_t target_id, char *type,
   sqlite3 *db = GET_W_DATABASE();
 
   if (source_id == 0 && target_id == 0 && type == NULL && id == 0) {
-    return (Result){.type = SIMPLE_ERR,
-                    .value = "at least one relation filter must be provided"};
+    return (Result){
+        .type = SIMPLE_ERR,
+        .value =
+            "get_relation_db: at least one relation filter must be provided"};
   }
 
   int arr_length = 0;
@@ -27,7 +29,8 @@ Result get_relation_db(int64_t source_id, int64_t target_id, char *type,
   Relation **relation_arr = malloc(sizeof(Relation *) * arr_capacity);
 
   if (relation_arr == NULL) {
-    return (Result){.type = SIMPLE_ERR, .value = "memory allocation failed"};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "get_relation_db: memory allocation failed"};
   }
 
   char sql[512] = "SELECT * FROM Relation WHERE 1=1 ";
@@ -51,8 +54,7 @@ Result get_relation_db(int64_t source_id, int64_t target_id, char *type,
   strcat(where_clause, ";");
   strcat(sql, where_clause);
 
-  int prepare_stat =
-      sqlite3_prepare_v2(db, sql, -1, &get_relation_stmt, NULL);
+  int prepare_stat = sqlite3_prepare_v2(db, sql, -1, &get_relation_stmt, NULL);
 
   if (prepare_stat != SQLITE_OK) {
     free(relation_arr);
@@ -86,7 +88,8 @@ Result get_relation_db(int64_t source_id, int64_t target_id, char *type,
       }
 
       free(relation_arr);
-      return (Result){.type = SIMPLE_ERR, .value = "memory allocation failed"};
+      return (Result){.type = SIMPLE_ERR,
+                      .value = "get_relation_db: memory allocation failed"};
     }
 
     if (arr_length >= arr_capacity) {
@@ -105,7 +108,7 @@ Result get_relation_db(int64_t source_id, int64_t target_id, char *type,
 
         free(relation_arr);
         return (Result){.type = SIMPLE_ERR,
-                        .value = "memory reallocation failed"};
+                        .value = "get_relation_db: memory reallocation failed"};
       }
 
       relation_arr = temp;
@@ -193,7 +196,8 @@ Result create_relation_db(Relation *relation) {
     free(relation_exist_arr);
 
     return (Result){.type = SIMPLE_ERR,
-                    .value = "relation with same source, target, and type exists"};
+                    .value = "create_relation_db: relation with same source, "
+                             "target, and type exists"};
   }
 
   int prepare_stat = sqlite3_prepare_v2(db, sql, -1, &create_stmt, NULL);
@@ -255,7 +259,8 @@ Result delete_relation_db(int64_t source_id, int64_t target_id, char *type,
 
   if (source_id == 0 && target_id == 0 && type == NULL && id == 0) {
     return (Result){.type = SIMPLE_ERR,
-                    .value = "at least one relation filter must be provided"};
+                    .value = "delete_relation_db: at least one relation filter "
+                             "must be provided"};
   }
 
   strcat(where_clause, ";");
@@ -275,7 +280,8 @@ Result delete_relation_db(int64_t source_id, int64_t target_id, char *type,
     sqlite3_bind_int64(delete_relation_stmt, bind_index++, target_id);
   }
   if (type != NULL) {
-    sqlite3_bind_text(delete_relation_stmt, bind_index++, type, -1, SQLITE_STATIC);
+    sqlite3_bind_text(delete_relation_stmt, bind_index++, type, -1,
+                      SQLITE_STATIC);
   }
   if (id != 0) {
     sqlite3_bind_int64(delete_relation_stmt, bind_index++, id);
@@ -310,11 +316,13 @@ Result update_relation_db(int64_t source_id, int64_t target_id, char *type,
   Result relation_exists = get_relation_db(source_id, target_id, type, id);
 
   if (relation_exists.type != SUCCESS && relation_exists.type != EMPTY) {
-    return (Result){.type = relation_exists.type, .value = relation_exists.value};
+    return (Result){.type = relation_exists.type,
+                    .value = relation_exists.value};
   }
 
   if (relation_exists.type == EMPTY) {
-    return (Result){.type = SIMPLE_ERR, .value = "Relation not found."};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "update_relation_db: Relation not found."};
   }
 
   Relation **relation_exists_arr = relation_exists.value;
@@ -338,7 +346,9 @@ Result update_relation_db(int64_t source_id, int64_t target_id, char *type,
     to_update++;
 
   if (to_update == 0) {
-    return (Result){.type = SIMPLE_ERR, .value = "no relation fields to update"};
+    return (Result){.type = SIMPLE_ERR,
+                    .value =
+                        "update_relation_db: no relation fields to update"};
   }
 
   int added_to = 0;
@@ -384,8 +394,8 @@ Result update_relation_db(int64_t source_id, int64_t target_id, char *type,
   strcat(sql, update_clause);
   strcat(sql, where_clause);
 
-  int prepare_stat = sqlite3_prepare_v2(
-      db, sql, -1, &update_relation_stmt, NULL);
+  int prepare_stat =
+      sqlite3_prepare_v2(db, sql, -1, &update_relation_stmt, NULL);
 
   if (prepare_stat != SQLITE_OK) {
     return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
@@ -400,8 +410,8 @@ Result update_relation_db(int64_t source_id, int64_t target_id, char *type,
     sqlite3_bind_int64(update_relation_stmt, bind_index++, relation.target_id);
   }
   if (relation.type != NULL) {
-    sqlite3_bind_text(
-        update_relation_stmt, bind_index++, relation.type, -1, SQLITE_STATIC);
+    sqlite3_bind_text(update_relation_stmt, bind_index++, relation.type, -1,
+                      SQLITE_STATIC);
   }
 
   if (source_id != 0) {
@@ -411,7 +421,8 @@ Result update_relation_db(int64_t source_id, int64_t target_id, char *type,
     sqlite3_bind_int64(update_relation_stmt, bind_index++, target_id);
   }
   if (type != NULL) {
-    sqlite3_bind_text(update_relation_stmt, bind_index++, type, -1, SQLITE_STATIC);
+    sqlite3_bind_text(update_relation_stmt, bind_index++, type, -1,
+                      SQLITE_STATIC);
   }
   if (id != 0) {
     sqlite3_bind_int64(update_relation_stmt, bind_index++, id);

@@ -16,16 +16,17 @@ Result dispatch_scope_request(const char *json) {
   cJSON *root = cJSON_Parse(json);
 
   if (root == NULL) {
-    return (Result){.type = SIMPLE_ERR, .value = "failure in deserialization."};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "scope_request: failure in deserialization."};
   }
 
   cJSON *method = cJSON_GetObjectItemCaseSensitive(root, "method");
-
   cJSON *value = cJSON_GetObjectItemCaseSensitive(root, "value");
 
   if (!cJSON_IsString(method) || !cJSON_IsObject(value)) {
     cJSON_Delete(root);
-    return (Result){.type = SIMPLE_ERR, .value = "failure in handling."};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "scope_request: failure in handling."};
   }
 
   Result result;
@@ -51,7 +52,8 @@ Result dispatch_scopefile_request(const char *json) {
   cJSON *root = cJSON_Parse(json);
 
   if (root == NULL) {
-    return (Result){.type = SIMPLE_ERR, .value = "failure in deserialization."};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "scopefile_request: failure in deserialization."};
   }
 
   cJSON *method = cJSON_GetObjectItemCaseSensitive(root, "method");
@@ -60,7 +62,8 @@ Result dispatch_scopefile_request(const char *json) {
 
   if (!cJSON_IsString(method) || !cJSON_IsObject(value)) {
     cJSON_Delete(root);
-    return (Result){.type = SIMPLE_ERR, .value = "failure in handling."};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "scopefile_request: failure in handling."};
   }
 
   Result result;
@@ -86,7 +89,9 @@ Result dispatch_entity_request(const char *json) {
   cJSON *root = cJSON_Parse(json);
 
   if (root == NULL) {
-    return (Result){.type = SIMPLE_ERR, .value = "failure in deserialization"};
+    return (Result){.type = SIMPLE_ERR,
+                    .value =
+                        "globalentity_request: failure in deserialization"};
   }
 
   cJSON *method = cJSON_GetObjectItemCaseSensitive(root, "method");
@@ -94,7 +99,8 @@ Result dispatch_entity_request(const char *json) {
 
   if (!cJSON_IsString(method) || !cJSON_IsObject(value)) {
     cJSON_Delete(root);
-    return (Result){.type = SIMPLE_ERR, .value = "failure in handling"};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "globalentity_request: failure in handling"};
   }
 
   Result result;
@@ -112,7 +118,8 @@ Result dispatch_relation_request(const char *json) {
   cJSON *root = cJSON_Parse(json);
 
   if (root == NULL) {
-    return (Result){.type = SIMPLE_ERR, .value = "failure in deserialization"};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "relation_request: failure in deserialization"};
   }
 
   cJSON *method = cJSON_GetObjectItemCaseSensitive(root, "method");
@@ -120,7 +127,8 @@ Result dispatch_relation_request(const char *json) {
 
   if (!cJSON_IsString(method) || !cJSON_IsObject(value)) {
     cJSON_Delete(root);
-    return (Result){.type = SIMPLE_ERR, .value = "failure in handling"};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "relation_request: failure in handling"};
   }
 
   Result result;
