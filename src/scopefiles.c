@@ -24,7 +24,8 @@ Result build_scopefile_path(ScopeFile sf) {
     return (Result){.type = scope_exist.type, .value = scope_exist.value};
   }
   if (scope_exist.value == NULL) {
-    return (Result){.type = SIMPLE_ERR, .value = "Scope not found."};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "build_scopefile_path: Scope not found."};
   }
 
   Scope *scope = ((Scope **)scope_exist.value)[0];
@@ -83,11 +84,13 @@ Result delete_scopefile(char *path) {
 
   Result sf_exist = get_scopefile(path);
   if (sf_exist.type != SUCCESS) {
-    return (Result){.type = SIMPLE_ERR, .value = "ScopeFile not found."};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "get_scopefile: ScopeFile not found."};
   }
 
   if (unlink(path) != 0) {
-    return (Result){.type = SIMPLE_ERR, .value = "delete ScopeFile failed."};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "get_scopefile: delete ScopeFile failed."};
   }
 
   return (Result){.type = SUCCESS, .value = ""};
@@ -114,7 +117,7 @@ Result make_scopefile(ScopeFile sf) {
                     (sf.extension ? strlen(sf.extension) : 0) + 1;
   char *filename = calloc(name_cap, 1);
   if (!filename) {
-    return (Result){.type = SIMPLE_ERR, .value = "oom"};
+    return (Result){.type = SIMPLE_ERR, .value = "make_scopefile: oom"};
   }
 
   snprintf(filename, name_cap, "%s.%s", scopefile_name_slug,
@@ -126,12 +129,12 @@ Result make_scopefile(ScopeFile sf) {
   int sf_fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
   if (sf_fd == -1) {
     return (Result){.type = SIMPLE_ERR,
-                    .value = "problem in making scopefile."};
+                    .value = "make_scopefile: problem in making scopefile."};
   }
 
   if (close(sf_fd) == -1) {
     return (Result){.type = SIMPLE_ERR,
-                    .value = "problem in making scopefile."};
+                    .value = "make_scopefile: problem in making scopefile."};
   }
 
   return (Result){.type = SUCCESS, .value = ""};
@@ -148,7 +151,8 @@ Result update_scopefile(char *name, int64_t scope_id, char *new_name,
 
   ScopeFile **sf_arr = scopefile_exist_db.value;
   if (sf_arr[0] == NULL && scopefile_exist_db.type == SUCCESS) {
-    return (Result){.type = SIMPLE_ERR, .value = "scopefile not found"};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "update_scopefile: scopefile not found"};
   }
 
   Result path = build_scopefile_path(*sf_arr[0]);
@@ -158,7 +162,8 @@ Result update_scopefile(char *name, int64_t scope_id, char *new_name,
 
   Result scopefile_exist = get_scopefile(path.value);
   if (scopefile_exist.type != FILE_DIR_NOTFOUND) {
-    return (Result){.type = SIMPLE_ERR, .value = "scopefile exists."};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "update_scopefile: scopefile exists."};
   }
 
   ScopeFile new_sf = {
@@ -175,13 +180,14 @@ Result update_scopefile(char *name, int64_t scope_id, char *new_name,
 
   Result validate_rename = get_scopefile(new_path.value);
   if (scopefile_exist.type != FILE_DIR_NOTFOUND) {
-    return (Result){.type = SIMPLE_ERR, .value = "scopefile exists."};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "update_scopefile: scopefile exists."};
   }
 
   int rename_sf = rename(path.value, new_path.value);
   if (rename_sf != 0) {
     return (Result){.type = SIMPLE_ERR,
-                    .value = "error in renaming scopefile."};
+                    .value = "update_scopefile: error in renaming scopefile."};
   }
 
   free(sf_arr[0]->name);

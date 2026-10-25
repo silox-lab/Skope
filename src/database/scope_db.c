@@ -25,7 +25,8 @@ Result get_scope_db(int64_t id, int64_t parent_scope_id, char *name) {
   Scope **scopes_arr = malloc(sizeof(Scope *) * arr_capacity);
 
   if (scopes_arr == NULL) {
-    return (Result){.type = SIMPLE_ERR, .value = "memory allocation failed"};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "get_scope_db: memory allocation failed"};
   }
 
   char sql[512] = "SELECT * FROM Scope WHERE 1=1";
@@ -75,7 +76,8 @@ Result get_scope_db(int64_t id, int64_t parent_scope_id, char *name) {
         free(scopes_arr[i]);
       }
       free(scopes_arr);
-      return (Result){.type = SIMPLE_ERR, .value = "memory allocation failed"};
+      return (Result){.type = SIMPLE_ERR,
+                      .value = "get_scope_db: memory allocation failed"};
     }
 
     if (arr_length >= arr_capacity) {
@@ -90,7 +92,7 @@ Result get_scope_db(int64_t id, int64_t parent_scope_id, char *name) {
         }
         free(scopes_arr);
         return (Result){.type = SIMPLE_ERR,
-                        .value = "memory reallocation failed"};
+                        .value = "get_scope_db: memory reallocation failed"};
       }
       scopes_arr = temp;
     }
@@ -173,7 +175,7 @@ Result create_scope_db(Scope *new_scope) {
       }
       free(scope_exist_arr);
       return (Result){.type = SIMPLE_ERR,
-                      .value = "scope with same name exist"};
+                      .value = "create_scope_db: scope with same name exist"};
     }
   }
 
@@ -307,7 +309,8 @@ Result update_scope_db(int64_t id, Scope s) {
   }
 
   if (scope_exists.type == EMPTY) {
-    return (Result){.type = SIMPLE_ERR, .value = "Scope not found."};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "update_scope_db: Scope not found."};
   }
 
   for (int i = 0; ((Scope **)scope_exists.value)[i] != NULL; i++) {

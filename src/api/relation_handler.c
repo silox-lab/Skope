@@ -23,12 +23,14 @@ Result handle_get_relation_db(cJSON *value) {
       (source_id != NULL && !cJSON_IsNumber(source_id)) ||
       (target_id != NULL && !cJSON_IsNumber(target_id)) ||
       (id != NULL && !cJSON_IsNumber(id))) {
-    return (Result){.type = SIMPLE_ERR, .value = "failure in handling."};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "get_relation: failure in handling."};
   }
 
   if (source == 0 && target == 0 && type == NULL && relation_id == 0) {
-    return (Result){.type = SIMPLE_ERR,
-                    .value = "at least one relation filter must be provided"};
+    return (Result){
+        .type = SIMPLE_ERR,
+        .value = "get_relation: at least one relation filter must be provided"};
   }
 
   return (Result){.type = SUCCESS,
@@ -49,12 +51,15 @@ Result handle_create_relation_db(cJSON *value) {
       !cJSON_IsString(type) ||
       (source_id != NULL && !cJSON_IsNumber(source_id)) ||
       (target_id != NULL && !cJSON_IsNumber(target_id))) {
-    return (Result){.type = SIMPLE_ERR, .value = "failure in handling."};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "create_relation: failure in handling."};
   }
 
   if (source == 0 && target == 0 && type == NULL) {
-    return (Result){.type = SIMPLE_ERR,
-                    .value = "at least one relation filter must be provided"};
+    return (Result){
+        .type = SIMPLE_ERR,
+        .value =
+            "create_relation: at least one relation filter must be provided"};
   }
 
   Relation relation = {
@@ -76,8 +81,10 @@ Result handle_delete_relation_db(cJSON *value) {
   int64_t relation_id = id ? id->valuedouble : 0;
 
   if (source == 0 && target == 0 && type == NULL && relation_id == 0) {
-    return (Result){.type = SIMPLE_ERR,
-                    .value = "at least one relation filter must be provided"};
+    return (Result){
+        .type = SIMPLE_ERR,
+        .value =
+            "delete_relation: at least one relation filter must be provided"};
   }
 
   return (Result){.type = SUCCESS,
@@ -98,7 +105,7 @@ Result handle_update_relation_db(cJSON *value) {
 
   if (source == 0 && target == 0 && type == NULL) {
     return (Result){.type = SIMPLE_ERR,
-                    .value = "no relation fields to update"};
+                    .value = "update_relation: no relation fields to update"};
   }
 
   Relation relation = {.source_id = source,

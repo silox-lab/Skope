@@ -2,12 +2,11 @@
  * SPDX-FileCopyrightText: 2026 silox-lab
  *
  * SPDX-License-Identifier: MIT
-*/
+ */
 #include "../../include/errors.h"
 #include "../../include/globals.h"
-#include <stdint.h>
-#include <string.h>
 #include <sqlite3.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -16,16 +15,19 @@ Result open_database() {
   sqlite3 *db;
   int open_stat = sqlite3_open(GET_DB_PATH(), &db);
   if (open_stat != SQLITE_OK) {
-    return (Result){.type = SIMPLE_ERR,
-                    .value = "failed to open or create the database."};
+    return (Result){
+        .type = SIMPLE_ERR,
+        .value = "open_database: failed to open or create the database."};
   }
 
-  int fk_enable = sqlite3_exec(db, "PRAGMA foreign_keys = ON;", NULL, NULL, NULL);
+  int fk_enable =
+      sqlite3_exec(db, "PRAGMA foreign_keys = ON;", NULL, NULL, NULL);
   if (fk_enable != SQLITE_OK) {
-    return (Result){.type = SIMPLE_ERR,
-                    .value = "failed to open or create the database."};
+    return (Result){
+        .type = SIMPLE_ERR,
+        .value = "open_database: failed to open or create the database."};
   }
-  
+
   return (Result){.type = SUCCESS, .value = db};
 }
 

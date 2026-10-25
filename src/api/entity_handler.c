@@ -18,12 +18,14 @@ Result handle_get_globalentity_db(cJSON *value) {
   if ((id != NULL && !cJSON_IsNumber(id)) ||
       (local_id != NULL && !cJSON_IsNumber(local_id)) ||
       (type != NULL && !cJSON_IsString(type))) {
-    return (Result){.type = SIMPLE_ERR, .value = "failure in handling."};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "get_globalentity: failure in handling."};
   }
 
   if (id == NULL && local_id == NULL && type == NULL) {
-    return (Result){.type = SIMPLE_ERR,
-                    .value = "at least one parameter must be provided"};
+    return (Result){
+        .type = SIMPLE_ERR,
+        .value = "get_globalentity: at least one parameter must be provided"};
   }
 
   int64_t entity_id = id ? (int64_t)id->valuedouble : 0;

@@ -17,8 +17,9 @@ Result get_globalentity_db(char *type, int64_t local_id, int64_t id) {
   sqlite3_stmt *get_globalentity_stmt;
   sqlite3 *db = GET_W_DATABASE();
   if (type == NULL && local_id == 0) {
-    return (Result){.type = SIMPLE_ERR,
-                    .value = "both type and local id can not be empty"};
+    return (Result){
+        .type = SIMPLE_ERR,
+        .value = "globalentity_db: both type and local id can not be empty"};
   }
 
   int arr_length = 0;
@@ -27,7 +28,8 @@ Result get_globalentity_db(char *type, int64_t local_id, int64_t id) {
       malloc(sizeof(GlobalEntity *) * arr_capacity);
 
   if (globalentity_arr == NULL) {
-    return (Result){.type = SIMPLE_ERR, .value = "memory allocation failed"};
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "mglobalentity_db: emory allocation failed"};
   }
 
   char sql[512] = "SELECT * FROM GlobalEntity WHERE 1=1 ";
