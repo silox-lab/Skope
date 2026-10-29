@@ -56,7 +56,7 @@ void run_event_loop(void) {
   }
 
   r = run_sql_db(DB_RELATION);
-
+  
   if (r.type != SUCCESS) {
     printf("Relation table creation failed: %s\n", (char *)r.value);
     return;

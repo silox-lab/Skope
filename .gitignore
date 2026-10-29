@@ -1,5 +1,7 @@
 main*
 build/
+builddir/
 .VSCodeCounter
+.vscode
 .idea
 .cache

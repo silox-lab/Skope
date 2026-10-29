@@ -7,7 +7,7 @@
 #include "../../include/globals.h"
 #include <sqlite3.h>
 #include <stdint.h>
-#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 Result open_database() {

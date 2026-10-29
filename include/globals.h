@@ -6,7 +6,6 @@
 #ifndef GLOBALS
 #define GLOBALS
 #include "schema.h"
-#include <ncurses.h>
 #include <sqlite3.h>
 
 char *GET_DB_PATH();
