@@ -68,7 +68,6 @@ Result get_scopefile_db(char *scopefile_name, int64_t scope_id) {
     ScopeFile *scopefile = malloc(sizeof(ScopeFile));
 
     if (scopefile == NULL) {
-      sqlite3_finalize(get_scopefile_stmt);
 
       for (int i = 0; i < arr_length; i++) {
         free(scopefiles_arr[i]->name);
@@ -77,7 +76,10 @@ Result get_scopefile_db(char *scopefile_name, int64_t scope_id) {
       }
 
       free(scopefiles_arr);
-
+      int finalize_stat = sqlite3_finalize(get_scopefile_stmt);
+      if (finalize_stat != SQLITE_OK) {
+        return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+      }
       return (Result){.type = SIMPLE_ERR,
                       .value = "get_scopefile_db: memory allocation failed."};
     }
@@ -104,8 +106,6 @@ Result get_scopefile_db(char *scopefile_name, int64_t scope_id) {
       if (tmp == NULL) {
         free(scopefile);
 
-        sqlite3_finalize(get_scopefile_stmt);
-
         for (int i = 0; i < arr_length; i++) {
           free(scopefiles_arr[i]->name);
           free(scopefiles_arr[i]->extension);
@@ -113,7 +113,11 @@ Result get_scopefile_db(char *scopefile_name, int64_t scope_id) {
         }
 
         free(scopefiles_arr);
-
+        
+        int finalize_stat = sqlite3_finalize(get_scopefile_stmt);
+        if (finalize_stat != SQLITE_OK) {
+          return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+        }
         return (Result){.type = SIMPLE_ERR,
                         .value = "get_scopefile_db: memory allocation failed."};
       }
@@ -128,8 +132,6 @@ Result get_scopefile_db(char *scopefile_name, int64_t scope_id) {
 
     char *err_msg = strdup(sqlite3_errmsg(db));
 
-    sqlite3_finalize(get_scopefile_stmt);
-
     for (int i = 0; i < arr_length; i++) {
       free(scopefiles_arr[i]->name);
       free(scopefiles_arr[i]->extension);
@@ -138,10 +140,18 @@ Result get_scopefile_db(char *scopefile_name, int64_t scope_id) {
 
     free(scopefiles_arr);
 
+    int finalize_stat = sqlite3_finalize(get_scopefile_stmt);
+    if (finalize_stat != SQLITE_OK) {
+      return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+    }
     return (Result){.type = DB_ERR, .value = err_msg};
   }
 
-  sqlite3_finalize(get_scopefile_stmt);
+  
+  int finalize_stat = sqlite3_finalize(get_scopefile_stmt);
+  if (finalize_stat != SQLITE_OK) {
+      return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+  }
 
   if (arr_length == 0) {
     free(scopefiles_arr);
@@ -172,11 +182,20 @@ Result create_scopefile_db(ScopeFile *scopefile) {
       scopefile_exist_result.value != NULL) {
     if (strcmp(((ScopeFile **)(scopefile_exist_result.value))[0]->name,
                scopefile->name) == 0) {
+      for (int i=0; ((ScopeFile **)(scopefile_exist_result.value))[i] != NULL; i++) {
+        free(((ScopeFile **)(scopefile_exist_result.value))[i]->name);
+        free(((ScopeFile **)(scopefile_exist_result.value))[i]->extension);
+        free(((ScopeFile **)(scopefile_exist_result.value))[i]);
+      }
+      
+      free(((ScopeFile **)(scopefile_exist_result.value)));
       return (Result){
           .type = SIMPLE_ERR,
           .value = "create_scopefile_db: scopefile with same name exist"};
     }
   }
+
+  free(((ScopeFile **)(scopefile_exist_result.value)));
 
   sqlite3_bind_text(create_stmt, 1, scopefile->name, -1, SQLITE_STATIC);
   sqlite3_bind_text(create_stmt, 2, scopefile->extension, -1, SQLITE_STATIC);

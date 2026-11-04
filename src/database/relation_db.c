@@ -80,14 +80,18 @@ Result get_relation_db(int64_t source_id, int64_t target_id, char *type,
     Relation *relation = malloc(sizeof(Relation));
 
     if (relation == NULL) {
-      sqlite3_finalize(get_relation_stmt);
-
       for (int i = 0; i < arr_length; i++) {
         free(relation_arr[i]->type);
         free(relation_arr[i]);
       }
 
       free(relation_arr);
+
+      int finalize_stat = sqlite3_finalize(get_relation_stmt);
+      if (finalize_stat != SQLITE_OK) {
+        return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+      }
+      
       return (Result){.type = SIMPLE_ERR,
                       .value = "get_relation_db: memory allocation failed"};
     }
@@ -99,7 +103,6 @@ Result get_relation_db(int64_t source_id, int64_t target_id, char *type,
 
       if (temp == NULL) {
         free(relation);
-        sqlite3_finalize(get_relation_stmt);
 
         for (int i = 0; i < arr_length; i++) {
           free(relation_arr[i]->type);
@@ -107,6 +110,12 @@ Result get_relation_db(int64_t source_id, int64_t target_id, char *type,
         }
 
         free(relation_arr);
+      
+        int finalize_stat = sqlite3_finalize(get_relation_stmt);
+        if (finalize_stat != SQLITE_OK) {
+          return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+        }
+        
         return (Result){.type = SIMPLE_ERR,
                         .value = "get_relation_db: memory reallocation failed"};
       }
@@ -129,9 +138,13 @@ Result get_relation_db(int64_t source_id, int64_t target_id, char *type,
   }
 
   if (arr_length == 0) {
-    sqlite3_finalize(get_relation_stmt);
     free(relation_arr);
 
+    int finalize_stat = sqlite3_finalize(get_relation_stmt);
+    if (finalize_stat != SQLITE_OK) {
+        return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+    }
+    
     if (step_result != SQLITE_DONE) {
       return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
     }
@@ -144,7 +157,6 @@ Result get_relation_db(int64_t source_id, int64_t target_id, char *type,
 
   if (step_result != SQLITE_DONE) {
     char *err_msg = strdup(sqlite3_errmsg(db));
-    sqlite3_finalize(get_relation_stmt);
 
     for (int i = 0; i < arr_length - 1; i++) {
       free(relation_arr[i]->type);
@@ -152,6 +164,12 @@ Result get_relation_db(int64_t source_id, int64_t target_id, char *type,
     }
 
     free(relation_arr);
+
+    
+    int finalize_stat = sqlite3_finalize(get_relation_stmt);
+    if (finalize_stat != SQLITE_OK) {
+        return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+    }
     return (Result){.type = DB_ERR, .value = err_msg};
   }
 
@@ -200,10 +218,11 @@ Result create_relation_db(Relation *relation) {
                              "target, and type exists"};
   }
 
+  free(relation_exist_arr);
+  
   int prepare_stat = sqlite3_prepare_v2(db, sql, -1, &create_stmt, NULL);
 
   if (prepare_stat != SQLITE_OK) {
-    free(relation_exist_arr);
     return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
   }
 
@@ -216,20 +235,18 @@ Result create_relation_db(Relation *relation) {
 
   if (step_stat != SQLITE_DONE) {
     char *err_msg = strdup(sqlite3_errmsg(db));
-    sqlite3_finalize(create_stmt);
-    free(relation_exist_arr);
-
+    
+    int finalize_stat = sqlite3_finalize(create_stmt);
+    if (finalize_stat != SQLITE_OK) {
+      return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
+    }
     return (Result){.type = DB_ERR, .value = err_msg};
   }
 
   int finalize_stat = sqlite3_finalize(create_stmt);
-
   if (finalize_stat != SQLITE_OK) {
-    free(relation_exist_arr);
     return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
   }
-
-  free(relation_exist_arr);
 
   return (Result){.type = SUCCESS, .value = ""};
 }
@@ -291,12 +308,14 @@ Result delete_relation_db(int64_t source_id, int64_t target_id, char *type,
 
   if (step_stat != SQLITE_DONE) {
     char *err_msg = strdup(sqlite3_errmsg(db));
-    sqlite3_finalize(delete_relation_stmt);
+    int finalize_stat = sqlite3_finalize(delete_relation_stmt);
+    if (finalize_stat != SQLITE_OK) {
+      return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
+    } 
     return (Result){.type = DB_ERR, .value = err_msg};
   }
 
   int finalize_stat = sqlite3_finalize(delete_relation_stmt);
-
   if (finalize_stat != SQLITE_OK) {
     return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
   }
@@ -321,6 +340,7 @@ Result update_relation_db(int64_t source_id, int64_t target_id, char *type,
   }
 
   if (relation_exists.type == EMPTY) {
+    free(relation_exists.value);
     return (Result){.type = SIMPLE_ERR,
                     .value = "update_relation_db: Relation not found."};
   }
@@ -432,12 +452,15 @@ Result update_relation_db(int64_t source_id, int64_t target_id, char *type,
 
   if (step_stat != SQLITE_DONE) {
     char *err_msg = strdup(sqlite3_errmsg(db));
-    sqlite3_finalize(update_relation_stmt);
+    
+    int finalize_stat = sqlite3_finalize(update_relation_stmt);
+    if (finalize_stat != SQLITE_OK) {
+      return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
+    }
     return (Result){.type = DB_ERR, .value = err_msg};
   }
 
   int finalize_stat = sqlite3_finalize(update_relation_stmt);
-
   if (finalize_stat != SQLITE_OK) {
     return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
   }

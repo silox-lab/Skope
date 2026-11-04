@@ -5,15 +5,18 @@
  */
 #include "../../include/errors.h"
 #include "../../include/globals.h"
+#include <stdlib.h>
 #include <sqlite3.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
 Result open_database() {
-  printf("OPENING DATABASE: %s\n", GET_DB_PATH());
+  char *db_path = GET_DB_PATH();
+  
+  printf("OPENING DATABASE: %s\n", db_path);
   sqlite3 *db;
-  int open_stat = sqlite3_open(GET_DB_PATH(), &db);
+  int open_stat = sqlite3_open(db_path, &db);
   if (open_stat != SQLITE_OK) {
     return (Result){
         .type = SIMPLE_ERR,
@@ -27,7 +30,7 @@ Result open_database() {
         .type = SIMPLE_ERR,
         .value = "open_database: failed to open or create the database."};
   }
-
+  free(db_path);
   return (Result){.type = SUCCESS, .value = db};
 }
 

@@ -15,96 +15,161 @@
 #include <string.h>
 #include <sys/stat.h>
 
-Result build_scope_path(Scope s) {
+Result build_scope_path(Scope s)
+{
+    int dirs_length = 0;
+    int dirs_capacity = 8;
 
-  if (s.parent_scope_id == 0) {
-    char scope_name_slug[256];
-    slugify_default(s.name, scope_name_slug, sizeof(scope_name_slug));
+    char **dirs = malloc(sizeof(*dirs) * dirs_capacity);
+    char *storage_path = GET_STORAGE_PATH();
+    char *parent_name = NULL;
+    char *final_path = NULL;
 
-    char final_path[1024];
-    snprintf(final_path, sizeof(final_path), "%s/%s", GET_STORAGE_PATH(),
-             scope_name_slug);
+    Result result = { .type = SUCCESS, .value = NULL };
 
-    return (Result){.type = SUCCESS, .value = strdup(final_path)};
-  }
-
-  int dirs_length = 0;
-  int dirs_cap = 8;
-  char **dirs = malloc(sizeof(char *) * dirs_cap);
-  if (!dirs) {
-    return (Result){.type = SIMPLE_ERR, .value = "build_scope_path: oom"};
-  }
-
-  Scope iter_scope = s;
-  while (1) {
-
-    char *slug_name = malloc(256);
-    if (!slug_name) {
-      for (int j = 0; j < dirs_length; j++)
-        free(dirs[j]);
-
-      return (Result){.type = SIMPLE_ERR, .value = "build_scope_path: oom"};
-    }
-    slugify_default(iter_scope.name, slug_name, 256);
-
-    if (dirs_length == dirs_cap) {
-      dirs_cap *= 2;
-      char **tmp = realloc(dirs, sizeof(char *) * dirs_cap);
-      if (!tmp) {
-        free(slug_name);
-        for (int j = 0; j < dirs_length; j++)
-          free(dirs[j]);
+    if (dirs == NULL || storage_path == NULL) {
         free(dirs);
-        return (Result){.type = SIMPLE_ERR, .value = "build_scope_path: oom"};
-      }
-      dirs = tmp;
+        free(storage_path);
+
+        return (Result){
+            .type = SIMPLE_ERR,
+            .value = "build_scope_path: memory allocation failed"
+        };
     }
-    dirs[dirs_length++] = slug_name;
 
-    if (iter_scope.parent_scope_id == 0)
-      break;
+    Scope current_scope = s;
 
-    Result get_parent = get_scope_db(iter_scope.parent_scope_id, 0, NULL);
-    if (get_parent.type != SUCCESS) {
-      for (int j = 0; j < dirs_length; j++)
-        free(dirs[j]);
-      free(dirs);
-      return (Result){.type = get_parent.type, .value = get_parent.value};
+    while (1) {
+        char *slug = malloc(256);
+
+        if (slug == NULL) {
+            result = (Result){
+                .type = SIMPLE_ERR,
+                .value = "build_scope_path: memory allocation failed"
+            };
+            break;
+        }
+
+        slugify_default(current_scope.name, slug, 256);
+
+        if (dirs_length == dirs_capacity) {
+            int new_capacity = dirs_capacity * 2;
+
+            char **new_dirs =
+                realloc(dirs, sizeof(*dirs) * new_capacity);
+
+            if (new_dirs == NULL) {
+                free(slug);
+
+                result = (Result){
+                    .type = SIMPLE_ERR,
+                    .value = "build_scope_path: memory allocation failed"
+                };
+                break;
+            }
+
+            dirs = new_dirs;
+            dirs_capacity = new_capacity;
+        }
+
+        dirs[dirs_length++] = slug;
+
+        if (current_scope.parent_scope_id == 0) {
+            break;
+        }
+
+        Result parent_result =
+            get_scope_db(current_scope.parent_scope_id, 0, NULL);
+
+        if (parent_result.type != SUCCESS) {
+            result = parent_result;
+            break;
+        }
+
+        Scope **parent_arr = parent_result.value;
+
+        if (parent_arr == NULL || parent_arr[0] == NULL) {
+            result = (Result){
+                .type = SIMPLE_ERR,
+                .value = "build_scope_path: parent scope not found"
+            };
+            break;
+        }
+
+        char *new_parent_name = strdup(parent_arr[0]->name);
+        int64_t new_parent_id = parent_arr[0]->parent_scope_id;
+
+        for (int i = 0; parent_arr[i] != NULL; i++) {
+            free(parent_arr[i]->name);
+            free(parent_arr[i]);
+        }
+
+        free(parent_arr);
+
+        if (new_parent_name == NULL) {
+            result = (Result){
+                .type = SIMPLE_ERR,
+                .value = "build_scope_path: memory allocation failed"
+            };
+            break;
+        }
+
+        free(parent_name);
+        parent_name = new_parent_name;
+
+        current_scope.name = parent_name;
+        current_scope.parent_scope_id = new_parent_id;
     }
-    iter_scope = *((Scope **)get_parent.value)[0];
-  }
 
-  size_t cap = strlen(GET_STORAGE_PATH()) + 1;
-  for (int i = 0; i < dirs_length; i++)
-    cap += strlen(dirs[i]) + 1;
+    if (result.type == SUCCESS) {
+        size_t path_capacity = strlen(storage_path) + 1;
 
-  char *dirs_str = calloc(cap, 1);
-  if (!dirs_str) {
-    for (int j = 0; j < dirs_length; j++)
-      free(dirs[j]);
+        for (int i = 0; i < dirs_length; i++) {
+            path_capacity += strlen(dirs[i]) + 1;
+        }
+
+        final_path = malloc(path_capacity);
+
+        if (final_path == NULL) {
+            result = (Result){
+                .type = SIMPLE_ERR,
+                .value = "build_scope_path: memory allocation failed"
+            };
+        } else {
+            size_t position =
+                (size_t)snprintf(final_path, path_capacity, "%s",
+                                 storage_path);
+
+            for (int i = dirs_length - 1; i >= 0; i--) {
+                position += (size_t)snprintf(
+                    final_path + position,
+                    path_capacity - position,
+                    "/%s",
+                    dirs[i]
+                );
+            }
+
+            result.value = final_path;
+        }
+    }
+
+    free(parent_name);
+    free(storage_path);
+
+    for (int i = 0; i < dirs_length; i++) {
+        free(dirs[i]);
+    }
+
     free(dirs);
-    return (Result){.type = SIMPLE_ERR, .value = "build_scope_path: oom"};
-  }
 
-  size_t pos = 0;
-  pos += snprintf(dirs_str + pos, cap - pos, "%s", GET_STORAGE_PATH());
-
-  for (int i = dirs_length - 1; i >= 0; i--) {
-    pos += snprintf(dirs_str + pos, cap - pos, "/%s", dirs[i]);
-  }
-
-  for (int j = 0; j < dirs_length; j++)
-    free(dirs[j]);
-  free(dirs);
-
-  return (Result){.type = SUCCESS, .value = dirs_str};
+    return result;
 }
 
 Result get_scope(int64_t id) {
   char scope_fullpath[256];
 
   Result scope = get_scope_db(id, 0, NULL);
-  if (scope.type == SUCCESS && scope.value == NULL) {
+  if (scope.type == EMPTY) {
     return (Result){.type = FILE_DIR_NOTFOUND, .value = NULL};
   }
 
@@ -117,10 +182,26 @@ Result get_scope(int64_t id) {
   DIR *scope_dir = opendir((char *)s_path.value);
 
   if (scope_dir == NULL) {
-
+    
+    free((char *)s_path.value);
+    for (int i=0; ((Scope **)scope.value)[i] != NULL; i++) {
+      free(((Scope **)scope.value)[i]->name);
+      free(((Scope **)scope.value)[i]);
+    }
+    
+    free(((Scope **)scope.value));
+    
     return (Result){.type = FILE_DIR_NOTFOUND, .value = NULL};
   }
+  free((char *)s_path.value);
 
+  for (int i=0; ((Scope **)scope.value)[i] != NULL; i++) {
+    free(((Scope **)scope.value)[i]->name);
+    free(((Scope **)scope.value)[i]);
+  }
+    
+  free(((Scope **)scope.value));
+    
   return (Result){.type = SUCCESS, .value = ""};
 }
 
@@ -139,6 +220,7 @@ Result make_scope(Scope s) {
       return (Result){.type = SIMPLE_ERR,
                       .value = "make_scope: Error when creating Scope."};
     }
+    free(build_path.value);
     return (Result){.type = SUCCESS, .value = ""};
   } else {
     return (Result){.type = SIMPLE_ERR,
@@ -161,9 +243,10 @@ Result delete_scope(Scope s) {
 
   int del_dir = remove_directory_recursive(build_path.value);
   if (del_dir != 0) {
+    free(build_path.value);
     return (Result){.type = SIMPLE_ERR, .value = "delete failed."};
   }
-
+  free(build_path.value);
   return (Result){.type = SUCCESS, .value = ""};
 }
 
@@ -175,7 +258,7 @@ Result update_scope(int64_t scope_id, char *new_name, int64_t new_parent_id) {
   }
 
   Scope **s_arr = scope_exist_db.value;
-  if (s_arr[0] == NULL && scope_exist_db.type == SUCCESS) {
+  if (scope_exist_db.type == EMPTY) {
     return (Result){.type = SIMPLE_ERR, .value = "scope not found"};
   }
 
@@ -185,6 +268,7 @@ Result update_scope(int64_t scope_id, char *new_name, int64_t new_parent_id) {
   }
 
   Result scope_exist = get_scope(scope_id);
+  free(path.value);
   if (scope_exist.type != SUCCESS) {
     return (Result){.type = scope_exist.type, .value = scope_exist.value};
   }
@@ -198,11 +282,14 @@ Result update_scope(int64_t scope_id, char *new_name, int64_t new_parent_id) {
 
   Result new_path = build_scope_path(new_s);
   if (new_path.type != SUCCESS) {
+    free(path.value);
     return (Result){.type = new_path.type, .value = new_path.value};
   }
 
   Result validate_rename = get_scope(scope_id);
   if (validate_rename.type == SUCCESS) {
+    free(path.value);
+    free(new_path.value);
     return (Result){
         .type = SIMPLE_ERR,
         .value = "there are already scopes with the name you want to chose."};
@@ -210,6 +297,8 @@ Result update_scope(int64_t scope_id, char *new_name, int64_t new_parent_id) {
 
   int rename_s = rename(path.value, new_path.value);
   if (rename_s != 0) {
+    free(path.value);
+    free(new_path.value);
     return (Result){.type = SIMPLE_ERR, .value = "error in renaming scope."};
   }
 

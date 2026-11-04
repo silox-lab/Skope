@@ -60,5 +60,7 @@ void INIT_STORAGE_PATH() {
     return;
   }
 
+  free(path);
+  
   return;
 }
