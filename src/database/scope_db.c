@@ -11,6 +11,7 @@
 #include "../../include/scopes.h"
 #include <sqlite3.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -68,14 +69,17 @@ Result get_scope_db(int64_t id, int64_t parent_scope_id, char *name) {
     Scope *scope = malloc(sizeof(Scope));
 
     if (scope == NULL) {
+      for (int i = 0; i != arr_length; i++) {
+        free(scopes_arr[i]->name);
+        free(scopes_arr[i]);
+      }
+      free(scopes_arr);
+
       int finalize_stat = sqlite3_finalize(get_scope_stmt);
       if (finalize_stat != SQLITE_OK) {
         return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
       }
-      for (int i = 0; i != arr_length; i++) {
-        free(scopes_arr[i]);
-      }
-      free(scopes_arr);
+      
       return (Result){.type = SIMPLE_ERR,
                       .value = "get_scope_db: memory allocation failed"};
     }
@@ -85,12 +89,16 @@ Result get_scope_db(int64_t id, int64_t parent_scope_id, char *name) {
       Scope **temp = realloc(scopes_arr, sizeof(Scope *) * arr_capacity);
       if (temp == NULL) {
         free(scope);
-        sqlite3_finalize(get_scope_stmt);
         for (int i = 0; i != arr_length; i++) {
           free(scopes_arr[i]->name);
           free(scopes_arr[i]);
         }
         free(scopes_arr);
+        
+        int finalize_stat = sqlite3_finalize(get_scope_stmt);
+        if (finalize_stat != SQLITE_OK) {
+          return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
+        }
         return (Result){.type = SIMPLE_ERR,
                         .value = "get_scope_db: memory reallocation failed"};
       }
@@ -119,20 +127,27 @@ Result get_scope_db(int64_t id, int64_t parent_scope_id, char *name) {
 
   if (arr_length == 0) {
     free(scopes_arr);
-    return (Result){.type = EMPTY, .value = NULL};
-  }
 
-  if (step_result != SQLITE_DONE) {
-    char *err_msg = strdup(sqlite3_errmsg(db));
     int finalize_stat = sqlite3_finalize(get_scope_stmt);
     if (finalize_stat != SQLITE_OK) {
       return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
     }
+    return (Result){.type = EMPTY, .value = NULL};
+  }
+
+  if (step_result != SQLITE_DONE) {
+    
     for (int i = 0; i != arr_length; i++) {
       free(scopes_arr[i]->name);
       free(scopes_arr[i]);
     }
     free(scopes_arr);
+    
+    char *err_msg = strdup(sqlite3_errmsg(db));
+    int finalize_stat = sqlite3_finalize(get_scope_stmt);
+    if (finalize_stat != SQLITE_OK) {
+      return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
+    }
     return (Result){.type = DB_ERR, .value = err_msg};
   }
 
@@ -233,20 +248,32 @@ Result create_scope_db(Scope *new_scope) {
   }
 
   Scope *created_scope = ((Scope **)get_created_scope.value)[0];
-
+  int64_t created_scope_id = created_scope->id;
+  
   Result make_scope_dir = make_scope(*created_scope);
   if (make_scope_dir.type != SUCCESS) {
+    for (int i=0; ((Scope **)get_created_scope.value)[i] != NULL; i++) {
+      free(((Scope **)get_created_scope.value)[i]->name);      
+      free(((Scope **)get_created_scope.value)[i]);
+    }
+    free(((Scope **)get_created_scope.value));
     return (Result){.type = make_scope_dir.type, .value = make_scope_dir.value};
   }
+   
+  for (int i=0; ((Scope **)get_created_scope.value)[i] != NULL; i++) {
+    free(((Scope **)get_created_scope.value)[i]->name);      
+    free(((Scope **)get_created_scope.value)[i]);
+  }
+  free(((Scope **)get_created_scope.value));
 
-  ScopeFile main_sf = {.scope_id = created_scope->id,
+  ScopeFile main_sf = {.scope_id = created_scope_id,
                        .extension = "txt",
                        .name = "main",
                        .created_on = time(NULL)};
 
   Result make_main_sf = make_scopefile(main_sf);
   if (make_main_sf.type != SUCCESS) {
-    return (Result){.type = make_main_sf.type, .value = make_main_sf.value};
+      return (Result){.type = make_main_sf.type, .value = make_main_sf.value};
   }
 
   Result make_main_sf_db = create_scopefile_db(&main_sf);
@@ -315,6 +342,7 @@ Result update_scope_db(int64_t id, Scope s) {
 
   for (int i = 0; ((Scope **)scope_exists.value)[i] != NULL; i++) {
     free(((Scope **)scope_exists.value)[i]->name);
+    free(((Scope **)scope_exists.value)[i]);
   }
   free(scope_exists.value);
 

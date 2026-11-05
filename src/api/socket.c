@@ -69,7 +69,8 @@ Result setup_socket() {
   }
 
   for (;;) {
-
+    break;
+    printf("hello\n");
     int cfd = accept(sfd, NULL, NULL);
 
     if (cfd == -1) {

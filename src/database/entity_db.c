@@ -72,18 +72,17 @@ Result get_globalentity_db(char *type, int64_t local_id, int64_t id) {
     GlobalEntity *globalentity = malloc(sizeof(GlobalEntity));
 
     if (globalentity == NULL) {
-      int finalize_stat = sqlite3_finalize(get_globalentity_stmt);
-      if (finalize_stat != SQLITE_OK) {
-        for (int i = 0; i < arr_length; i++) {
-          free(globalentity_arr[i]);
-        }
-        free(globalentity_arr);
-        return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
-      }
+      
       for (int i = 0; i < arr_length; i++) {
+        free(globalentity_arr[i]->type);
         free(globalentity_arr[i]);
       }
       free(globalentity_arr);
+      
+      int finalize_stat = sqlite3_finalize(get_globalentity_stmt);
+      if (finalize_stat != SQLITE_OK) {
+        return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
+      }
       return (Result){.type = SIMPLE_ERR, .value = "memory allocation failed"};
     }
 
@@ -93,12 +92,17 @@ Result get_globalentity_db(char *type, int64_t local_id, int64_t id) {
           realloc(globalentity_arr, sizeof(GlobalEntity *) * arr_capacity);
       if (temp == NULL) {
         free(globalentity);
-        sqlite3_finalize(get_globalentity_stmt);
         for (int i = 0; i < arr_length; i++) {
           free(globalentity_arr[i]->type);
           free(globalentity_arr[i]);
         }
         free(globalentity_arr);
+        
+        int finalize_stat = sqlite3_finalize(get_globalentity_stmt);
+        if (finalize_stat != SQLITE_OK) {
+          return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
+        }
+         
         return (Result){.type = SIMPLE_ERR,
                         .value = "memory reallocation failed"};
       }
@@ -119,7 +123,11 @@ Result get_globalentity_db(char *type, int64_t local_id, int64_t id) {
   }
 
   if (arr_length == 0) {
-    sqlite3_finalize(get_globalentity_stmt);
+    
+    int finalize_stat = sqlite3_finalize(get_globalentity_stmt);
+    if (finalize_stat != SQLITE_OK) {
+      return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
+    }
     free(globalentity_arr);
 
     return (Result){.type = EMPTY, .value = NULL};
@@ -129,21 +137,19 @@ Result get_globalentity_db(char *type, int64_t local_id, int64_t id) {
   arr_length++;
 
   if (step_result != SQLITE_DONE) {
-    char *err_msg = strdup(sqlite3_errmsg(db));
-    int finalize_stat = sqlite3_finalize(get_globalentity_stmt);
-    if (finalize_stat != SQLITE_OK) {
-      for (int i = 0; i != arr_length - 1; i++) {
-        free(globalentity_arr[i]->type);
-        free(globalentity_arr[i]);
-      }
-      free(globalentity_arr);
-      return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
-    }
+    
     for (int i = 0; i != arr_length - 1; i++) {
       free(globalentity_arr[i]->type);
       free(globalentity_arr[i]);
     }
     free(globalentity_arr);
+
+    char *err_msg = strdup(sqlite3_errmsg(db));
+    int finalize_stat = sqlite3_finalize(get_globalentity_stmt);
+    if (finalize_stat != SQLITE_OK) {
+        return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
+    }
+    
     return (Result){.type = DB_ERR, .value = err_msg};
   }
 

@@ -25,7 +25,9 @@ char *nodata_result_to_json(Result r) {
     cJSON_AddNullToObject(root, "value");
   cJSON_AddStringToObject(root, "value", message);
 
-  return cJSON_PrintUnformatted(root);
+  char *printed = cJSON_PrintUnformatted(root);
+  cJSON_Delete(root);
+  return printed;
 }
 
 char *scope_arr_to_json(Result scope_arr_result) {
@@ -59,7 +61,10 @@ char *scope_arr_to_json(Result scope_arr_result) {
 
   cJSON_AddItemToObject(root, "value", value);
 
-  return cJSON_PrintUnformatted(root);
+  
+  char *printed = cJSON_PrintUnformatted(root);
+  cJSON_Delete(root);
+  return printed;
 }
 
 char *scopefile_arr_to_json(Result scopefile_arr_result) {
@@ -94,7 +99,10 @@ char *scopefile_arr_to_json(Result scopefile_arr_result) {
 
   cJSON_AddItemToObject(root, "value", value);
 
-  return cJSON_PrintUnformatted(root);
+  
+  char *printed = cJSON_PrintUnformatted(root);
+  cJSON_Delete(root);
+  return printed;
 }
 
 char *relation_arr_to_json(Result relation_arr_result) {
@@ -129,7 +137,10 @@ char *relation_arr_to_json(Result relation_arr_result) {
 
   cJSON_AddItemToObject(root, "value", value);
 
-  return cJSON_PrintUnformatted(root);
+  
+  char *printed = cJSON_PrintUnformatted(root);
+  cJSON_Delete(root);
+  return printed;
 }
 
 char *globalentity_arr_to_json(Result entity_arr_result) {
@@ -162,6 +173,8 @@ char *globalentity_arr_to_json(Result entity_arr_result) {
   free(entity_arr_result.value);
 
   cJSON_AddItemToObject(root, "value", value);
-
-  return cJSON_PrintUnformatted(root);
+ 
+  char *printed = cJSON_PrintUnformatted(root);
+  cJSON_Delete(root);
+  return printed;
 }
