@@ -347,6 +347,7 @@ Result update_scopefile_db(char *name, int64_t scope_id, ScopeFile sf) {
     sqlite3_bind_int64(update_scopefile_stmt, bind_index++, sf.scope_id);
   }
 
+  sqlite3_bind_int64(update_scopefile_stmt, bind_index++, scope_id);
   sqlite3_bind_text(update_scopefile_stmt, bind_index++, name, -1,
                     SQLITE_STATIC);
 

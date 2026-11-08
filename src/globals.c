@@ -36,15 +36,8 @@ char *GET_STORAGE_PATH() {
   return path;
 }
 
-void INIT_DATABASE() {
-  Result db = open_database();
+void INIT_DATABASE(sqlite3 *db) { W_DATABASE = db; }
 
-  if (db.type != SUCCESS) {
-    W_DATABASE = NULL;
-  } else {
-    W_DATABASE = (sqlite3 *)db.value;
-  }
-}
 sqlite3 *GET_W_DATABASE() { return W_DATABASE; }
 
 void INIT_STORAGE_PATH() {

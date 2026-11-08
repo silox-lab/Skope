@@ -4,7 +4,6 @@ sources = files(
   'globals.c',
   'slugify.c',
   'utils.c',
-  'event_loop.c'
 )
 
 subdir('database')

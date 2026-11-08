@@ -34,11 +34,11 @@ Result open_database() {
   return (Result){.type = SUCCESS, .value = db};
 }
 
-Result run_sql_db(char *table) {
+Result run_sql_db(const char *table) {
 
   sqlite3 *db = GET_W_DATABASE();
 
-  char *run_err;
+  char *run_err = NULL;
   int run_stat = sqlite3_exec(db, table, NULL, NULL, &run_err);
   if (run_stat != SQLITE_OK) {
     char *err_msg = strdup(run_err);

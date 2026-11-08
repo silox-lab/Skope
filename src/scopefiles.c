@@ -80,10 +80,8 @@ Result get_scopefile(char *path) {
   int *sf = malloc(sizeof(int));
   *sf = open(path, O_RDONLY);
   if (*sf == -1) {
-    free(path);
     return (Result){.type = FILE_DIR_NOTFOUND, .value = ""};
   }
-  free(path);
   return (Result){.type = SUCCESS, .value = &sf};
 }
 
@@ -219,10 +217,10 @@ Result update_scopefile(char *name, int64_t scope_id, char *new_name,
   }
 
   Result scopefile_exist = get_scopefile(path.value);
-  if (scopefile_exist.type != FILE_DIR_NOTFOUND) {
+  if (scopefile_exist.type == FILE_DIR_NOTFOUND) {
     free(path.value);
     return (Result){.type = SIMPLE_ERR,
-                    .value = "update_scopefile: scopefile exists."};
+                    .value = "update_scopefile: scopefile does not exists."};
   }
 
   ScopeFile new_sf = {
@@ -239,7 +237,7 @@ Result update_scopefile(char *name, int64_t scope_id, char *new_name,
   }
 
   Result validate_rename = get_scopefile(new_path.value);
-  if (scopefile_exist.type != FILE_DIR_NOTFOUND) {
+  if (validate_rename.type != FILE_DIR_NOTFOUND) {
     free(path.value);
     free(new_path.value);
     return (Result){.type = SIMPLE_ERR,

@@ -268,7 +268,6 @@ Result update_scope(int64_t scope_id, char *new_name, int64_t new_parent_id) {
   }
 
   Result scope_exist = get_scope(scope_id);
-  free(path.value);
   if (scope_exist.type != SUCCESS) {
     return (Result){.type = scope_exist.type, .value = scope_exist.value};
   }
@@ -286,15 +285,17 @@ Result update_scope(int64_t scope_id, char *new_name, int64_t new_parent_id) {
     return (Result){.type = new_path.type, .value = new_path.value};
   }
 
-  Result validate_rename = get_scope(scope_id);
-  if (validate_rename.type == SUCCESS) {
+  struct stat st;
+  if (stat(new_path.value, &st) == 0 && S_ISDIR(st.st_mode)) {
     free(path.value);
     free(new_path.value);
-    return (Result){
-        .type = SIMPLE_ERR,
-        .value = "there are already scopes with the name you want to chose."};
+    free(s_arr[0]->name);
+    free(s_arr[0]);
+    free(s_arr);
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "there are already scopes with the name you want to chose."};
   }
-
+  
   int rename_s = rename(path.value, new_path.value);
   if (rename_s != 0) {
     free(path.value);
