@@ -72,8 +72,8 @@ static const char *DB_RELATION =
     "target_id integer NOT NULL,"
     "type varchar(250) NOT NULL,"
     "created_on integer NOT NULL,"
-    "FOREIGN KEY(source_id) REFERENCES Relation(id) ON DELETE CASCADE,"
-    "FOREIGN KEY(target_id) REFERENCES Relation(id) ON DELETE CASCADE"
+    "FOREIGN KEY(source_id) REFERENCES GlobalEntity(id) ON DELETE CASCADE,"
+    "FOREIGN KEY(target_id) REFERENCES GlobalEntity(id) ON DELETE CASCADE"
     ");";
 
 #endif

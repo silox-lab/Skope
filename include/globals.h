@@ -10,7 +10,7 @@
 
 char *GET_DB_PATH();
 
-void INIT_DATABASE();
+void INIT_DATABASE(sqlite3 *db);
 sqlite3 *GET_W_DATABASE();
 
 char *GET_STORAGE_PATH();

@@ -115,6 +115,8 @@ Result get_globalentity_db(char *type, int64_t local_id, int64_t id) {
 
     if (type_text)
       globalentity->type = strdup(type_text);
+    
+    globalentity->local_id = sqlite3_column_int64(get_globalentity_stmt, 2);
 
     globalentity->created_on = sqlite3_column_int(get_globalentity_stmt, 3);
 

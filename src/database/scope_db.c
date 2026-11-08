@@ -66,7 +66,7 @@ Result get_scope_db(int64_t id, int64_t parent_scope_id, char *name) {
   int step_result;
   while ((step_result = sqlite3_step(get_scope_stmt)) == SQLITE_ROW) {
 
-    Scope *scope = malloc(sizeof(Scope));
+    Scope *scope = calloc(1, sizeof(Scope));
 
     if (scope == NULL) {
       for (int i = 0; i != arr_length; i++) {
@@ -109,7 +109,7 @@ Result get_scope_db(int64_t id, int64_t parent_scope_id, char *name) {
     const char *name_text =
         (const char *)sqlite3_column_text(get_scope_stmt, 1);
 
-    if (name_text)
+    if (name_text) 
       scope->name = strdup(name_text);
 
     scope->created_on = sqlite3_column_int(get_scope_stmt, 2);
@@ -132,7 +132,7 @@ Result get_scope_db(int64_t id, int64_t parent_scope_id, char *name) {
     if (finalize_stat != SQLITE_OK) {
       return (Result){.type = DB_ERR, .value = strdup(sqlite3_errmsg(db))};
     }
-    return (Result){.type = EMPTY, .value = NULL};
+    return (Result){.type = EMPTY, .value = NULL };
   }
 
   if (step_result != SQLITE_DONE) {
@@ -192,8 +192,7 @@ Result create_scope_db(Scope *new_scope) {
       return (Result){.type = SIMPLE_ERR,
                       .value = "create_scope_db: scope with same name exist"};
     }
-  }
-
+  } 
   int prepare_stat = sqlite3_prepare_v2(db, sql, -1, &create_stmt, NULL);
   if (prepare_stat != SQLITE_OK) {
     for (int i = 0; scope_exist_arr != NULL && scope_exist_arr[i] != NULL;
@@ -247,6 +246,11 @@ Result create_scope_db(Scope *new_scope) {
                     .value = get_created_scope.value};
   }
 
+  if (get_created_scope.type == EMPTY) {
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "created scope could not be fetched." };
+  }
+
   Scope *created_scope = ((Scope **)get_created_scope.value)[0];
   int64_t created_scope_id = created_scope->id;
   
@@ -284,7 +288,7 @@ Result create_scope_db(Scope *new_scope) {
 
   return (Result){.type = SUCCESS, .value = ""};
 }
-
+ 
 Result delete_scope_db(int64_t id) {
   sqlite3 *db = GET_W_DATABASE();
   sqlite3_stmt *del_scope_stmt;
@@ -316,8 +320,8 @@ Result delete_scope_db(int64_t id) {
 }
 
 Result update_scope_db(int64_t id, Scope s) {
-
-  Result update_s = update_scope(id, s.name);
+  
+  Result update_s = update_scope(id, s.name, s.parent_scope_id);
   if (update_s.type != SUCCESS) {
     return (Result){.type = update_s.type, .value = update_s.value};
   }
