@@ -14,5 +14,6 @@ Result create_scope_db(Scope *new_scope);
 Result get_scope_db(int64_t id, int64_t parent_scope_id, char *name);
 Result delete_scope_db(int64_t id);
 Result update_scope_db(int64_t id, Scope s);
+Result search_scope_db(char *name);
 
 #endif

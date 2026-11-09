@@ -39,6 +39,8 @@ Result dispatch_scope_request(const char *json) {
     result = handle_delete_scope_db(value);
   } else if (strcmp(method->valuestring, "update_scope_db") == 0) {
     result = handle_update_scope_db(value);
+  } else if (strcmp(method->valuestring, "search_scope_db") == 0) {
+    result = handle_search_scope_db(value);
   } else {
     result = (Result){.type = EMPTY, .value = NULL};
   }

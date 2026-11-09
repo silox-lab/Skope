@@ -412,3 +412,136 @@ Result update_scope_db(int64_t id, Scope s) {
 
   return (Result){.type = SUCCESS, .value = ""};
 }
+
+Result search_scope_db(char *name) {
+    
+    sqlite3 *db = GET_W_DATABASE();
+
+    sqlite3_stmt *search_stmt;
+
+    int length = 0;
+    int capacity = 10;
+
+    Scope **arr = malloc(sizeof(Scope *) * capacity);
+    if (arr == NULL) {
+        return (Result) { .type = SIMPLE_ERR, .value = "search_scope_db: oom" };
+    }
+
+    char *sql = "SELECT * FROM Scope WHERE LOWER(name) LIKE '%' || LOWER(?) || '%';";
+
+    int prepare_stat = sqlite3_prepare_v2(db, sql, -1, &search_stmt, NULL);
+    if (prepare_stat != SQLITE_OK) {
+        free(arr);
+        return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+    }
+ 
+    sqlite3_bind_text(search_stmt, 1, name, -1, SQLITE_STATIC);
+
+    int step_stat;
+    while ((step_stat = sqlite3_step(search_stmt)) == SQLITE_ROW) {
+
+        Scope *new_scope = malloc(sizeof(Scope));
+        if (new_scope == NULL) {
+
+            for (int i=0; i != length; i++) {
+                free(arr[i]->name);
+                free(arr[i]);
+            }
+            free(arr);
+
+            int finalize_stat = sqlite3_finalize(search_stmt);
+            if (finalize_stat != SQLITE_OK) {
+                return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+            }
+
+            return (Result) { .type = SIMPLE_ERR, .value = "search_scope_db: oom" };
+        }
+
+        if (length >= capacity) {
+
+            capacity *= 2;
+            Scope **temp = realloc(arr, sizeof(Scope *) * capacity);
+
+            if (temp == NULL) {
+                for (int i=0; i != length; i++) {
+                    free(arr[i]->name);
+                    free(arr[i]);
+                }
+                free(arr);
+
+                int finalize_stat = sqlite3_finalize(search_stmt);
+                if (finalize_stat != SQLITE_OK) {
+                    return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+                }
+
+                return (Result) { .type = SIMPLE_ERR, .value = "failed to realloc." };
+            }
+
+            arr = temp;
+        }
+
+        new_scope->id = sqlite3_column_int64(search_stmt, 0);
+        new_scope->name = strdup((char *)sqlite3_column_text(search_stmt, 1));
+        new_scope->created_on = sqlite3_column_int64(search_stmt, 2);
+        new_scope->parent_scope_id = sqlite3_column_int64(search_stmt, 3);
+
+        arr[length] = new_scope;
+        length++;
+    }
+
+    if (step_stat != SQLITE_DONE) {
+        for (int i=0; i != length; i++) {
+            free(arr[i]->name);
+            free(arr[i]);
+        }
+        free(arr);
+
+        int finalize_stat = sqlite3_finalize(search_stmt);
+        if (finalize_stat != SQLITE_OK) {
+            return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+        }
+    }
+
+    if (length >= capacity) {
+
+        capacity *= 2;
+        Scope **temp = realloc(arr, sizeof(Scope *) * capacity);
+
+        if (temp == NULL) {
+            for (int i=0; i != length; i++) {
+                free(arr[i]->name);
+                free(arr[i]);
+            }
+            free(arr);
+
+            int finalize_stat = sqlite3_finalize(search_stmt);
+            if (finalize_stat != SQLITE_OK) {
+                return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+            }
+
+            return (Result) { .type = SIMPLE_ERR, .value = "failure in realloc" };
+        }
+
+        arr = temp;
+    }
+
+    if (length == 0) {
+        free(arr);
+        int finalize_stat = sqlite3_finalize(search_stmt);
+        if (finalize_stat != SQLITE_OK) {
+            return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+        }
+
+        return (Result) { .type = EMPTY, .value = NULL };
+    }
+
+    arr[length] = NULL;
+    length++;
+
+    int finalize_stat = sqlite3_finalize(search_stmt);
+    if (finalize_stat != SQLITE_OK) {
+        return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+    }
+
+    return (Result) { .type = SUCCESS, .value = arr };
+}
