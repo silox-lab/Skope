@@ -149,24 +149,145 @@ Test(scopefile_unit, scopefile_crud_test) {
   }
   free((Scope **)get_s_res.value);
 
-  for (int i=0; ((ScopeFile **)get_sf_res.value)[i] != NULL; i++) {
-      free(((ScopeFile **)get_sf_res.value)[i]->name);
-      free(((ScopeFile **)get_sf_res.value)[i]->extension);
-      free(((ScopeFile **)get_sf_res.value)[i]);
-  }
-  free((ScopeFile **)get_sf_res.value);
+  Result results[] = { get_sf_res, get_main_sf_res, get_updated_sf_res };
 
-  for (int i=0; ((ScopeFile **)get_main_sf_res.value)[i] != NULL; i++) {
-      free(((ScopeFile **)get_main_sf_res.value)[i]->name);
-      free(((ScopeFile **)get_main_sf_res.value)[i]->extension);
-      free(((ScopeFile **)get_main_sf_res.value)[i]);
-  }
-  free((ScopeFile **)get_main_sf_res.value);
+  for (int r = 0; r < 3; r++) {
+    ScopeFile **scopefiles = results[r].value;
 
-  for (int i=0; ((ScopeFile **)get_updated_sf_res.value)[i] != NULL; i++) {
-      free(((ScopeFile **)get_updated_sf_res.value)[i]->name);
-      free(((ScopeFile **)get_updated_sf_res.value)[i]->extension);
-      free(((ScopeFile **)get_updated_sf_res.value)[i]);
+    for (int i = 0; scopefiles[i] != NULL; i++) {
+      free(scopefiles[i]->name);
+      free(scopefiles[i]->extension);
+      free(scopefiles[i]);
+    }
+
+    free(scopefiles);
   }
-  free((ScopeFile **)get_updated_sf_res.value);
+
+}
+
+Test(scopefile_unit, scopefile_search_test) {
+
+  Scope new_scope = {
+    .name = "test_scope",
+    .parent_scope_id = 0
+  };
+
+  Result scope_create_res = create_scope_db(&new_scope);
+  cr_assert_eq(
+    scope_create_res.type,
+    SUCCESS,
+    "create_scope_db: failed: %s",
+    (char *)scope_create_res.value
+  );
+
+  Result scope_get_res = get_scope_db(0, 0, "test_scope");
+  cr_assert_eq(
+    scope_get_res.type,
+    SUCCESS,
+    "get_scope_db failed: %s",
+    (char *)scope_get_res.value
+  );
+
+  Scope *created_scope = ((Scope **)scope_get_res.value)[0];
+  int64_t scope_id = created_scope->id;
+
+  ScopeFile new_scopefile = {
+    .name = "foo",
+    .extension = "txt",
+    .scope_id = scope_id
+  };
+
+  Result create_res = create_scopefile_db(&new_scopefile);
+  cr_assert_eq(
+    create_res.type,
+    SUCCESS,
+    "create_scopefile_db failed: %s",
+    (char *)create_res.value
+  );
+
+  Result get_res = get_scopefile_db("foo", scope_id);
+  cr_assert_eq(
+    get_res.type,
+    SUCCESS,
+    "get_scopefile_db failed: %s",
+    (char *)get_res.value
+  );
+
+  ScopeFile *created_scopefile = ((ScopeFile **)get_res.value)[0];
+
+  cr_expect(
+    strcmp(created_scopefile->name, "foo") == 0 &&
+    strcmp(created_scopefile->extension, "txt") == 0 &&
+    created_scopefile->scope_id == scope_id
+  );
+
+  ScopeFile new_scopefile2 = {
+    .name = "bar",
+    .extension = "pdf",
+    .scope_id = scope_id
+  };
+
+  Result create_res2 = create_scopefile_db(&new_scopefile2);
+  cr_assert_eq(
+    create_res2.type,
+    SUCCESS,
+    "create_scopefile_db failed: %s",
+    (char *)create_res2.value
+  );
+
+  Result get_res2 = get_scopefile_db("bar", scope_id);
+  cr_assert_eq(
+    get_res2.type,
+    SUCCESS,
+    "get_scopefile_db failed: %s",
+    (char *)get_res2.value
+  );
+
+  ScopeFile *created_scopefile2 = ((ScopeFile **)get_res2.value)[0];
+
+  cr_expect(
+    strcmp(created_scopefile2->name, "bar") == 0 &&
+    strcmp(created_scopefile2->extension, "pdf") == 0 &&
+    created_scopefile2->scope_id == scope_id
+  );
+
+  Result search_res = search_scopefile_db("foo");
+
+  cr_assert_eq(
+    search_res.type,
+    SUCCESS,
+    "search_scopefile_db failed: %s",
+    (char *)search_res.value
+  );
+
+  ScopeFile *searched_scopefile = ((ScopeFile **)search_res.value)[0];
+
+  cr_expect(
+    strcmp(searched_scopefile->name, "foo") == 0 &&
+    strcmp(searched_scopefile->extension, "txt") == 0 &&
+    searched_scopefile->scope_id == scope_id
+  );
+
+  Result results[] = { get_res, get_res2, search_res };
+
+  for (int r = 0; r < 3; r++) {
+    ScopeFile **scopefiles = results[r].value;
+
+    for (int i = 0; scopefiles[i] != NULL; i++) {
+      free(scopefiles[i]->name);
+      free(scopefiles[i]->extension);
+      free(scopefiles[i]);
+    }
+
+    free(scopefiles);
+  }
+
+  Scope **scopes = scope_get_res.value;
+
+  for (int i = 0; scopes[i] != NULL; i++) {
+    free(scopes[i]->name);
+    free(scopes[i]);
+  }
+
+  free(scopes);
 }

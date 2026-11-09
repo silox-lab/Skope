@@ -103,3 +103,24 @@ Result handle_update_scope_db(cJSON *value) {
                   .value = nodata_result_to_json(
                       update_scope_db((int64_t)id->valuedouble, scope))};
 }
+
+Result handle_search_scope_db(cJSON *value) {
+
+  cJSON *name = cJSON_GetObjectItemCaseSensitive(value, "name");
+
+  if ((name != NULL && !cJSON_IsString(name))) {
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "search_scope: failure in handling."};
+  }
+
+  if (name == NULL) {
+    return (Result){.type = SIMPLE_ERR,
+                    .value =
+                        "search_scope: name parameter must be provided"};
+  }
+
+  char *scope_name = name ? name->valuestring : NULL;
+
+  return (Result){.type = SUCCESS,
+                  .value = scope_arr_to_json(search_scope_db(scope_name))};
+}

@@ -367,3 +367,144 @@ Result update_scopefile_db(char *name, int64_t scope_id, ScopeFile sf) {
 
   return (Result){.type = SUCCESS, .value = ""};
 }
+
+Result search_scopefile_db(char *name_or_ext) {
+    
+    sqlite3 *db = GET_W_DATABASE();
+
+    sqlite3_stmt *search_stmt;
+
+    int length = 0;
+    int capacity = 10;
+
+    ScopeFile **arr = malloc(sizeof(ScopeFile *) * capacity);
+    if (arr == NULL) {
+        return (Result) { .type = SIMPLE_ERR, .value = "search_scopefile_db: oom" };
+    }
+
+    char *sql =
+    "SELECT * FROM ScopeFile "
+    "WHERE LOWER(name) LIKE '%' || LOWER(?) || '%' "
+    "OR LOWER(extension) LIKE '%' || LOWER(?) || '%';";
+
+    int prepare_stat = sqlite3_prepare_v2(db, sql, -1, &search_stmt, NULL);
+    if (prepare_stat != SQLITE_OK) {
+        return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+    }
+ 
+    sqlite3_bind_text(search_stmt, 1, name_or_ext, -1, SQLITE_STATIC);
+    sqlite3_bind_text(search_stmt, 2, name_or_ext, -1, SQLITE_STATIC);
+
+    int step_stat;
+    while ((step_stat = sqlite3_step(search_stmt)) == SQLITE_ROW) {
+
+        ScopeFile *new_scopefile = malloc(sizeof(ScopeFile));
+        if (new_scopefile == NULL) {
+
+            for (int i=0; i != length - 1; i++) {
+                free(arr[i]->name);
+                free(arr[i]->extension);
+                free(arr[i]);
+            }
+            free(arr);
+
+            int finalize_stat = sqlite3_finalize(search_stmt);
+            if (finalize_stat != SQLITE_OK) {
+                return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+            }
+
+            return (Result) { .type = SIMPLE_ERR, .value = "search_scopefile_db: oom" };
+        }
+
+        if (length >= capacity) {
+
+            capacity *= 2;
+            ScopeFile **temp = realloc(arr, sizeof(ScopeFile *) * capacity);
+
+            if (temp == NULL) {
+                for (int i=0; i != length; i++) {
+                    free(arr[i]->name);
+                    free(arr[i]->extension);
+                    free(arr[i]);
+                }
+                free(arr);
+
+                int finalize_stat = sqlite3_finalize(search_stmt);
+                if (finalize_stat != SQLITE_OK) {
+                    return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+                }
+
+                return (Result) { .type = SIMPLE_ERR, .value = "failed to realloc." };
+            }
+
+            arr = temp;
+        }
+
+        new_scopefile->id = sqlite3_column_int64(search_stmt, 0);
+        new_scopefile->name = strdup((char *)sqlite3_column_text(search_stmt, 1));
+        new_scopefile->extension = strdup((char *)sqlite3_column_text(search_stmt, 2));
+        new_scopefile->created_on = sqlite3_column_int64(search_stmt, 3);
+        new_scopefile->scope_id = sqlite3_column_int64(search_stmt, 4);
+
+        arr[length] = new_scopefile;
+        length++;
+    }
+
+    if (step_stat != SQLITE_DONE) {
+        for (int i=0; i != length; i++) {
+            free(arr[i]->name);
+            free(arr[i]->extension);
+            free(arr[i]);
+        }
+        free(arr);
+
+        int finalize_stat = sqlite3_finalize(search_stmt);
+        if (finalize_stat != SQLITE_OK) {
+            return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+        }
+    }
+
+    if (length >= capacity) {
+
+        capacity *= 2;
+        ScopeFile **temp = realloc(arr, sizeof(ScopeFile *) * capacity);
+
+        if (temp == NULL) {
+            for (int i=0; i != length; i++) {
+                free(arr[i]->name);
+                free(arr[i]->extension);
+                free(arr[i]);
+            }
+            free(arr);
+
+            int finalize_stat = sqlite3_finalize(search_stmt);
+            if (finalize_stat != SQLITE_OK) {
+                return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+            }
+
+            return (Result) { .type = SIMPLE_ERR, .value = "failed to realloc." };
+        }
+
+        arr = temp;
+    }
+
+    if (length == 0) {
+        free(arr);
+        int finalize_stat = sqlite3_finalize(search_stmt);
+        if (finalize_stat != SQLITE_OK) {
+            return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+        }
+
+        return (Result) { .type = EMPTY, .value = NULL };
+    }
+
+    arr[length] = NULL;
+    length++;
+
+    int finalize_stat = sqlite3_finalize(search_stmt);
+    if (finalize_stat != SQLITE_OK) {
+        return (Result) { .type = DB_ERR, .value = strdup(sqlite3_errmsg(db)) };
+    }
+
+    return (Result) { .type = SUCCESS, .value = arr };
+}

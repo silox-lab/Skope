@@ -96,3 +96,24 @@ Result handle_update_scopefile_db(cJSON *value) {
                       current_name->valuestring, (int64_t)scope_id->valuedouble,
                       scopefile))};
 }
+
+Result handle_search_scopefile_db(cJSON *value) {
+
+  cJSON *name_or_ext = cJSON_GetObjectItemCaseSensitive(value, "name_or_ext");
+
+  if ((name_or_ext != NULL && !cJSON_IsString(name_or_ext))) {
+    return (Result){.type = SIMPLE_ERR,
+                    .value = "search_scopefile: failure in handling."};
+  }
+
+  if (name_or_ext == NULL) {
+    return (Result){.type = SIMPLE_ERR,
+                    .value =
+                        "search_scopefile: name parameter must be provided"};
+  }
+
+  char *scopefile_name_or_ext = name_or_ext ? name_or_ext->valuestring : NULL;
+
+  return (Result){.type = SUCCESS,
+                  .value = scopefile_arr_to_json(search_scopefile_db(scopefile_name_or_ext))};
+}

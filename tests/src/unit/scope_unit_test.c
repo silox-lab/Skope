@@ -82,15 +82,101 @@ Test(scope_unit, scope_crud_test) {
   Result delete_res = delete_scope_db(created_scope->id);
   cr_expect(delete_res.type == SUCCESS, "delete_scope_db failed.");
 
-  for (int i=0; ((Scope **)get_res.value)[i] != NULL; i++) {
-      free(((Scope **)get_res.value)[i]->name);
-      free(((Scope **)get_res.value)[i]);
-  }
-  free((Scope **)get_res.value);
+  Result results[] = { get_res, get_updated_res };
 
-  for (int i=0; ((Scope **)get_updated_res.value)[i] != NULL; i++) {
-      free(((Scope **)get_updated_res.value)[i]->name);
-      free(((Scope **)get_updated_res.value)[i]);
+  for (int r = 0; r < 2; r++) {
+    Scope **scopes = results[r].value;
+
+    for (int i = 0; scopes[i] != NULL; i++) {
+      free(scopes[i]->name);
+      free(scopes[i]);
+    }
+
+    free(scopes);
   }
-  free((Scope **)get_updated_res.value);
+}
+
+Test(scope_unit, scope_search_test) {
+
+  sqlite3 *db = GET_W_DATABASE();
+
+  Scope new_scope = {
+    .name = "foo",
+    .parent_scope_id = 0
+  };
+
+  Result create_res = create_scope_db(&new_scope);
+  cr_expect(create_res.type == SUCCESS, "create_scope_db failed: %s\n", (char *)create_res.value);
+
+  Result get_res = get_scope_db(0, 0, "foo");
+  cr_expect(get_res.type == SUCCESS, "get_scope_db failed: %s\n", (char *)get_res.value);
+
+  Scope *created_scope = ((Scope **)get_res.value)[0];
+  cr_expect(
+    created_scope->id == 1 &&
+    strcmp(created_scope->name, "foo") == 0 &&
+    created_scope->parent_scope_id == 0,
+
+    "created_scope field mismatch:\n"
+    "id: %ld\n"
+    "name: %s\n"
+    "parent_scope_id: %ld\n",
+    created_scope->id,
+    created_scope->name,
+    created_scope->parent_scope_id
+  );
+
+  Scope new_scope2 = {
+    .name = "bar",
+    .parent_scope_id = 0
+  };
+
+  Result create_res2 = create_scope_db(&new_scope2);
+  cr_expect(create_res2.type == SUCCESS, "create_scope_db failed: %s\n", (char *)create_res2.value);
+
+  Result get_res2 = get_scope_db(0, 0, "bar");
+  cr_expect(get_res2.type == SUCCESS, "get_scope_db failed: %s\n", (char *)get_res2.value);
+
+  Scope *created_scope2 = ((Scope **)get_res2.value)[0];
+  cr_expect(
+    created_scope2->id == 2 &&
+    strcmp(created_scope2->name, "bar") == 0 &&
+    created_scope2->parent_scope_id == 0,
+
+    "created_scope2 field mismatch:\n"
+    "id: %ld\n"
+    "name: %s\n"
+    "parent_scope_id: %ld\n",
+    created_scope2->id,
+    created_scope2->name,
+    created_scope2->parent_scope_id
+  );
+
+  Result search_res = search_scope_db("f");
+  cr_assert(search_res.type == SUCCESS, "search_res: failed: %s\n", (char *)search_res.value);
+
+  Scope *searched_scope = ((Scope **)search_res.value)[0];
+  cr_expect(
+    strcmp(searched_scope->name, "foo") == 0 &&
+    searched_scope->parent_scope_id == 0,
+
+    "searched_scope: field mismatch:\n"
+    "name: %s\n"
+    "parent_scope_id: %ld\n",
+    searched_scope->name,
+    searched_scope->parent_scope_id
+  );
+
+  Result results[] = { get_res, get_res2, search_res };
+
+  for (int r = 0; r < 3; r++) {
+    Scope **scopes = results[r].value;
+
+    for (int i = 0; scopes[i] != NULL; i++) {
+      free(scopes[i]->name);
+      free(scopes[i]);
+    }
+
+    free(scopes);
+  }
 }

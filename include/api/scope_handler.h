@@ -12,5 +12,6 @@ Result handle_get_scope_db(cJSON *value);
 Result handle_create_scope_db(cJSON *value);
 Result handle_delete_scope_db(cJSON *value);
 Result handle_update_scope_db(cJSON *value);
+Result handle_search_scope_db(cJSON *value);
 
 #endif
